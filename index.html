@@ -8,7 +8,7 @@
 <style>
   :root{
     --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21;
-    --ok:#12b886; --med:#ffd43b; --hi:#ff922b; --vhi:#fa5252; --accent:#2a84ff;
+    --ok:#12b886; --med:#ffd43b; --hi:#ff922b; --vhi:#fa5252;
   }
   @media (prefers-color-scheme: light){
     :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; }
@@ -16,16 +16,21 @@
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
         background:var(--bg); color:var(--fg); }
-  header{ padding:16px; position:sticky; top:0; backdrop-filter:saturate(1.2) blur(6px);
-          background:color-mix(in oklab, var(--bg) 84%, transparent); border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
+  header{ padding:16px; position:sticky; top:0; z-index:2;
+          backdrop-filter:saturate(1.2) blur(6px);
+          background:color-mix(in oklab, var(--bg) 84%, transparent);
+          border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
   h1{ font-size:18px; margin:0; }
   main{ padding:16px; display:grid; gap:16px; max-width:720px; margin:0 auto; }
   .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  button{ font-size:16px; padding:10px 14px; border-radius:12px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+  button{ font-size:16px; padding:10px 14px; border-radius:12px;
+          border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
           background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); }
   button:active{ transform:scale(0.98); }
+  input{ padding:10px 12px; border-radius:10px; border:1px solid color-mix(in oklab,var(--fg) 15%, transparent);
+         background:transparent; color:var(--fg); flex:1; }
   .muted{ color:var(--muted); font-size:13px; }
   .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .kpi{ display:flex; flex-direction:column; gap:4px; padding:10px; border-radius:12px;
@@ -33,18 +38,21 @@
   .kpi b{ font-size:18px; }
   .pill{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:13px; }
   .pill.low{ background:color-mix(in oklab, var(--ok) 25%, transparent); color: var(--ok);}
-  .pill.mod{ background:color-mix(in oklab, var(--med) 25%, transparent); color: #a07b00;}
+  .pill.mod{ background:color-mix(in oklab, var(--med) 25%, transparent); color:#a07b00;}
   .pill.high{ background:color-mix(in oklab, var(--hi) 25%, transparent); color:#a35300;}
   .pill.vhi{ background:color-mix(in oklab, var(--vhi) 25%, transparent); color:#8a0b0b;}
   .gauge{ width:100%; aspect-ratio:2.2/1; }
   .advice li{ margin:6px 0; }
   .tiny{ font-size:12px; }
   .toast{ position:fixed; left:12px; right:12px; bottom:16px; background:var(--card);
-          border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); padding:12px; border-radius:12px; display:none; }
-  .results{ margin:8px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto; }
+          border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+          padding:12px; border-radius:12px; display:none; z-index:3;}
+  .results{ margin:8px 0 0; padding:0; list-style:none; max-height:240px; overflow:auto; }
   .results li{ margin:6px 0; }
   .results button{ width:100%; text-align:left; padding:8px 12px; border-radius:10px; }
   .results .tiny{ opacity:.8; font-size:12px; display:block; }
+  .chip{ font-size:13px; padding:6px 10px; border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+         background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); margin:6px 6px 0 0; display:inline-block; }
 </style>
 </head>
 <body>
@@ -53,7 +61,7 @@
   <div class="row" style="gap:6px;">
     <button id="refreshBtn">更新</button>
     <button id="useGps">現在地</button>
-    <button id="openPicker">地点を指定</button>
+    <button id="openPicker" aria-expanded="false" aria-controls="picker">地点を指定</button>
   </div>
 </header>
 
@@ -61,9 +69,9 @@
   <section class="card" id="statusCard">
     <div class="row">
       <div>
-        <div class="muted" id="where">位置取得中…</div>
+        <div class="muted" id="where">東京周辺</div>
         <div style="margin-top:6px;">
-          <span id="levelPill" class="pill">計算中…</span>
+          <span id="levelPill" class="pill">—</span>
           <span class="muted tiny" id="updated">--:-- 更新</span>
         </div>
       </div>
@@ -83,81 +91,324 @@
       <text id="labelMain" x="500" y="245" text-anchor="middle" font-size="42" font-weight="800"></text>
       <text id="labelSub" x="500" y="285" text-anchor="middle" font-size="24" opacity=".8"></text>
     </svg>
-    <div class="muted tiny">データ: Open-Meteo</div>
+    <div class="muted tiny">データ: Open-Meteo（気象/大気/花粉）・地名検索: Open-Meteo Geocoding</div>
   </section>
 
   <section class="card">
     <div class="grid">
-      <div class="kpi"><span class="muted tiny">PM2.5</span><b id="pm25">--</b></div>
-      <div class="kpi"><span class="muted tiny">O3</span><b id="o3">--</b></div>
-      <div class="kpi"><span class="muted tiny">湿度%</span><b id="rh">--</b></div>
-      <div class="kpi"><span class="muted tiny">気温℃</span><b id="t">--</b></div>
-      <div class="kpi"><span class="muted tiny">風速m/s</span><b id="wind">--</b></div>
-      <div class="kpi"><span class="muted tiny">気圧hPa</span><b id="p">--</b></div>
-      <div class="kpi"><span class="muted tiny">花粉</span><b id="pollen">--</b></div>
-      <div class="kpi"><span class="muted tiny">UV</span><b id="uv">--</b></div>
+      <div class="kpi"><span class="muted tiny">PM2.5 μg/m³</span><b id="pm25">--</b></div>
+      <div class="kpi"><span class="muted tiny">オゾン μg/m³</span><b id="o3">--</b></div>
+      <div class="kpi"><span class="muted tiny">湿度 %</span><b id="rh">--</b></div>
+      <div class="kpi"><span class="muted tiny">気温 °C</span><b id="t">--</b></div>
+      <div class="kpi"><span class="muted tiny">風速 m/s</span><b id="wind">--</b></div>
+      <div class="kpi"><span class="muted tiny">気圧 hPa</span><b id="p">--</b></div>
+      <div class="kpi"><span class="muted tiny">花粉（概況）</span><b id="pollen">--</b></div>
+      <div class="kpi"><span class="muted tiny">光化学/UV 指標</span><b id="uv">--</b></div>
     </div>
   </section>
 
-  <section class="card"><b>アドバイス</b><ul id="adviceList"></ul></section>
-  <section class="card"><b>1時間ごとの見通し（次の3時間）</b><div class="grid" id="miniForecast"></div></section>
+  <section class="card">
+    <b>アドバイス</b>
+    <ul id="adviceList" style="padding-left:18px; margin:8px 0 0;"></ul>
+  </section>
+
+  <section class="card">
+    <b>1時間ごとの見通し（次の3時間）</b>
+    <div class="grid" id="miniForecast"></div>
+  </section>
 
   <section class="card" id="picker" style="display:none;">
-    <label class="tiny muted">地名・駅名・住所で検索</label>
-    <div class="row"><input id="place" style="flex:1; padding:10px;" placeholder="例: 新宿, 大阪市"/><button id="search">検索</button></div>
+    <label class="tiny muted">地名・駅名・住所で検索（例：新座、練馬、札幌駅）</label>
+    <div class="row">
+      <input id="place" placeholder="地名を入力">
+      <button id="search">検索</button>
+    </div>
     <ul id="results" class="results"></ul>
+    <div id="recentWrap" style="margin-top:10px; display:none;">
+      <div class="muted tiny">最近使った地点</div>
+      <div id="recent"></div>
+    </div>
   </section>
+
+  <div class="muted tiny">※参考指標。症状が強い場合は医療機関へ。GPSは公開URLで有効になりやすいです。</div>
 </main>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-// ---- キャッシュユーティリティ ----
-const MemCache = new Map();
-function cacheKey(url){ return "fetch:"+url; }
-function setCache(url, value, ttl){ const until=Date.now()+ttl; MemCache.set(url,{until,value}); localStorage.setItem(cacheKey(url),JSON.stringify({until,value})); }
-function getCache(url){ const k=cacheKey(url), now=Date.now(); const m=MemCache.get(url); if(m&&m.until>now) return m.value; try{const o=JSON.parse(localStorage.getItem(k)||"{}"); if(o.until>now){MemCache.set(url,o); return o.value;} localStorage.removeItem(k);}catch{} return null; }
-async function cachedFetchJSON(url,ttl){ const hit=getCache(url); if(hit) return hit; try{const r=await fetch(url); if(!r.ok) throw 0; const j=await r.json(); setCache(url,j,ttl); return j;}catch(e){console.error("fetch失敗",url); return{};} }
+/* ===== ユーティリティ / キャッシュ ===== */
+const Mem = new Map();
+const KEY_PREFIX = "asthma:";
+const $ = s=>document.querySelector(s);
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const fmt = n => (n==null||Number.isNaN(n)) ? "--" : Math.round(n*10)/10;
+function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2400); }
 
-// ---- データ取得 ----
-async function fetchAll(lat,lon){
-  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Tokyo";
-  const base=`lat=${lat}&longitude=${lon}&timezone=${encodeURIComponent(tz)}`;
-  const aq=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,ozone,uv_index&timezone=${tz}`;
-  const wx=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m&timezone=${tz}`;
-  const pl=`https://pollen-api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=grass_pollen,birch_pollen,ragweed_pollen&timezone=${tz}`;
-  const ttl=10*60*1000;
-  const [aqJ,wxJ,plJ]=await Promise.all([cachedFetchJSON(aq,ttl),cachedFetchJSON(wx,ttl),cachedFetchJSON(pl,ttl)]);
-  const nowISO=new Date().toISOString().slice(0,13);
-  function pick(o,k){const arrT=o?.hourly?.time||[];const i=arrT.findIndex(t=>t.startsWith(nowISO));return i>=0?o.hourly[k]?.[i]:null;}
-  return {pm25:pick(aqJ,"pm2_5"),o3:pick(aqJ,"ozone"),uv:pick(aqJ,"uv_index"),
-          t:pick(wxJ,"temperature_2m"),rh:pick(wxJ,"relative_humidity_2m"),
-          wind:pick(wxJ,"wind_speed_10m"),p:pick(wxJ,"pressure_msl"),
-          grass:pick(plJ,"grass_pollen"),birch:pick(plJ,"birch_pollen"),rag:pick(plJ,"ragweed_pollen"),
-          mini:(()=>{const ts=wxJ?.hourly?.time||[];const i=ts.findIndex(t=>t.startsWith(nowISO));return [i+1,i+2,i+3].map(j=>({hh:ts[j]?.slice(11,16),pm25:aqJ?.hourly?.pm2_5?.[j],o3:aqJ?.hourly?.ozone?.[j],rh:wxJ?.hourly?.relative_humidity_2m?.[j],wind:wxJ?.hourly?.wind_speed_10m?.[j]}));})()};
+function kFetch(url){ return KEY_PREFIX+"fetch:"+url; }
+function getLS(k){ try{return JSON.parse(localStorage.getItem(k));}catch{return null;} }
+function setLS(k,v){ try{localStorage.setItem(k,JSON.stringify(v));}catch{} }
+function delLS(k){ try{localStorage.removeItem(k);}catch{} }
+
+function getCache(url){
+  const key=kFetch(url), now=Date.now();
+  const m=Mem.get(key);
+  if(m&&m.until>now) return m.value;
+  const obj=getLS(key);
+  if(obj&&obj.until>now){ Mem.set(key,obj); return obj.value; }
+  if(obj) delLS(key);
+  return null;
+}
+function setCache(url,val,ttl){
+  const key=kFetch(url), rec={until:Date.now()+ttl, value:val};
+  Mem.set(key,rec); setLS(key,rec);
+}
+async function cachedFetchJSON(url, ttl){
+  const hit=getCache(url); if(hit) return hit;
+  try{
+    const r = await fetch(url, {headers:{'Accept':'application/json'}});
+    if(!r.ok) throw new Error("status "+r.status);
+    const j = await r.json();
+    setCache(url, j, ttl);
+    return j;
+  }catch(e){
+    console.warn("fetch失敗:", url, e);
+    return {}; // 失敗は空で返す（後段は欠損許容）
+  }
+}
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+/* ====== 最近地点 ====== */
+function pushRecent(place){
+  const key=KEY_PREFIX+"recent";
+  let arr=getLS(key)||[];
+  arr=arr.filter(p=>!(Math.abs(p.lat-place.lat)<1e-6 && Math.abs(p.lon-place.lon)<1e-6));
+  arr.unshift(place); arr=arr.slice(0,5);
+  setLS(key,arr);
+}
+function renderRecent(){
+  const arr=getLS(KEY_PREFIX+"recent")||[];
+  const wrap=$("#recentWrap"), box=$("#recent");
+  if(!arr.length){ wrap.style.display="none"; return; }
+  wrap.style.display="block";
+  box.innerHTML = arr.map(p=>`<button class="chip" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${p.name}">${p.name}</button>`).join("");
+  box.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{ update(+b.dataset.lat, +b.dataset.lon, b.dataset.name); showToast(`地点を設定：${b.dataset.name}`); });
+  });
 }
 
-// ---- スコア計算（簡略） ----
-function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-function computeScore(d){let s=0;if(d.pm25!=null)s+=d.pm25>35?30:d.pm25>15?15:5;if(d.o3!=null)s+=d.o3>100?15:d.o3>60?8:2;if(d.rh!=null)(d.rh<40||d.rh>75)?s+=5:0;if(d.t!=null)(d.t<10||d.t>30)?s+=5:0;if(d.wind!=null&&d.wind>8)s+=5;if(d.p!=null&&d.p<1005)s+=3; if(d.uv!=null&&d.uv>6)s+=4;if(d.grass||d.birch||d.rag){const x=Math.max(d.grass||0,d.birch||0,d.rag||0);s+=x>50?15:x>10?8:2;} return clamp(s,0,100);}
-function level(s){if(s<25)return["低い","low"];if(s<50)return["中程度","mod"];if(s<75)return["高い","high"];return["非常に高い","vhi"];}
+/* ====== 現地時刻キー（TZ一致） ====== */
+function hourKeyInTZ(tz){
+  // "YYYY-MM-DD HH" をTZで作って "YYYY-MM-DDTHH" に
+  const s = new Intl.DateTimeFormat('sv-SE', {
+    timeZone: tz, hour12: false,
+    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit'
+  }).format(new Date()); // 例 "2025-09-28 07"
+  return s.replace(" ","T");
+}
+function closestIndex(arr, keyPrefix){
+  let idx = arr.findIndex(t=>t.startsWith(keyPrefix));
+  if (idx>=0) return idx;
+  // 近い時刻を使用（安全側で最新寄り）
+  const times = arr.map(t=>Date.parse(t+":00"));
+  const target = Date.parse(keyPrefix+":00");
+  let best=0, bestDiff=Infinity;
+  for(let i=0;i<times.length;i++){
+    const d = Math.abs(times[i]-target);
+    if(d<bestDiff){ best=i; bestDiff=d; }
+  }
+  return best;
+}
 
-// ---- UI 更新 ----
-function showToast(msg){const t=document.querySelector("#toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2500);}
-async function update(lat,lon,label="地点"){document.querySelector("#where").textContent=label;const d=await fetchAll(lat,lon);document.querySelector("#pm25").textContent=d.pm25??"--";document.querySelector("#o3").textContent=d.o3??"--";document.querySelector("#rh").textContent=d.rh??"--";document.querySelector("#t").textContent=d.t??"--";document.querySelector("#wind").textContent=d.wind??"--";document.querySelector("#p").textContent=d.p??"--";document.querySelector("#uv").textContent=d.uv??"--";document.querySelector("#pollen").textContent=(d.grass||d.birch||d.rag)?(Math.max(d.grass||0,d.birch||0,d.rag||0)>50?"高":"中"):"--";const score=computeScore(d);const [lab,cls]=level(score);document.querySelector("#score").textContent=score;document.querySelector("#levelPill").className="pill "+cls;document.querySelector("#levelPill").textContent=lab;document.querySelector("#labelMain").textContent=lab;document.querySelector("#labelSub").textContent=`総合 ${score}`;document.querySelector("#updated").textContent=new Date().toTimeString().slice(0,5)+" 更新";document.querySelector("#adviceList").innerHTML=lab==="低い"?"<li>通常どおり活動可</li>":"<li>外出は控えめに</li>";document.querySelector("#miniForecast").innerHTML=d.mini.map(m=>`<div class="kpi"><span>${m.hh||"--"}</span><span class="tiny">PM2.5 ${m.pm25??"--"}</span></div>`).join("");}
+/* ====== データ取得 ====== */
+async function fetchAll(lat, lon){
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
+  const tzEnc = encodeURIComponent(tz);
+  const latR = Math.round(lat*100)/100, lonR = Math.round(lon*100)/100; // 0.01度丸め(≈1km)
+  const aq = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latR}&longitude=${lonR}&hourly=pm2_5,ozone,uv_index&timezone=${tzEnc}`;
+  const wx = `https://api.open-meteo.com/v1/forecast?latitude=${latR}&longitude=${lonR}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m&timezone=${tzEnc}`;
+  const pl = `https://pollen-api.open-meteo.com/v1/forecast?latitude=${latR}&longitude=${lonR}&hourly=grass_pollen,birch_pollen,ragweed_pollen&timezone=${tzEnc}`;
 
-// ---- GPS ----
-document.querySelector("#useGps").onclick=()=>{if(!navigator.geolocation){showToast("位置情報NG");return;}navigator.geolocation.getCurrentPosition(p=>update(p.coords.latitude,p.coords.longitude,"現在地"),()=>showToast("位置情報が拒否されました"));};
+  const ttl = 10*60*1000; // 10分
+  const [aqJ, wxJ, plJ] = await Promise.all([
+    cachedFetchJSON(aq, ttl), cachedFetchJSON(wx, ttl), cachedFetchJSON(pl, ttl)
+  ]);
 
-// ---- 地名検索 ----
-async function geocode(q){if(!q)return[];const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&format=json`;const j=await cachedFetchJSON(url,3600*1000);return j.results||[];}
-function shortLabel(n){return [n.name,n.admin1,n.country].filter(Boolean).join(", ");}
-document.querySelector("#search").onclick=async()=>{const q=document.querySelector("#place").value.trim();const res=await geocode(q);const ul=document.querySelector("#results");if(!res.length){ul.innerHTML="<li class='muted tiny'>見つかりません</li>";return;}ul.innerHTML=res.map(r=>`<li><button data-lat="${r.latitude}" data-lon="${r.longitude}" data-name="${shortLabel(r)}">${shortLabel(r)}</button></li>`).join("");ul.querySelectorAll("button").forEach(b=>b.onclick=()=>update(b.dataset.lat,b.dataset.lon,b.dataset.name));};
-document.querySelector("#openPicker").onclick=()=>{const p=document.querySelector("#picker");p.style.display=p.style.display==="none"?"block":"none";};
-document.querySelector("#refreshBtn").onclick=()=>showToast("再読込: 地点を指定してください");
+  const hk = hourKeyInTZ(tz);
+  const times = (aqJ?.hourly?.time || wxJ?.hourly?.time || []);
+  const idx = times.length ? closestIndex(times, hk) : -1;
 
-// 初期
-update(35.68,139.76,"東京周辺");
+  function pick(o,k){
+    if(idx<0) return null;
+    const arr = o?.hourly?.[k] || [];
+    return (idx>=0 && idx<arr.length) ? arr[idx] : null;
+  }
+
+  const nextIdx = [idx+1, idx+2, idx+3].filter(i=>i>0 && i<(times?.length||0));
+
+  return {
+    pm25: pick(aqJ,"pm2_5"),
+    o3:   pick(aqJ,"ozone"),
+    uv:   pick(aqJ,"uv_index"),
+    t:    pick(wxJ,"temperature_2m"),
+    rh:   pick(wxJ,"relative_humidity_2m"),
+    wind: pick(wxJ,"wind_speed_10m"),
+    p:    pick(wxJ,"pressure_msl"),
+    grass: pick(plJ,"grass_pollen"),
+    birch: pick(plJ,"birch_pollen"),
+    rag:   pick(plJ,"ragweed_pollen"),
+    mini: nextIdx.map(i=>({
+      hh: times[i]?.slice(11,16) ?? "--:--",
+      pm25: aqJ?.hourly?.pm2_5?.[i] ?? null,
+      o3:   aqJ?.hourly?.ozone?.[i] ?? null,
+      rh:   wxJ?.hourly?.relative_humidity_2m?.[i] ?? null,
+      wind: wxJ?.hourly?.wind_speed_10m?.[i] ?? null
+    }))
+  };
+}
+
+/* ====== スコア ====== */
+function computeScore(d){
+  let s=0;
+  if(d.pm25!=null) s += d.pm25>90?40 : d.pm25>55?35 : d.pm25>35?28 : d.pm25>25?18 : d.pm25>12?10 : 2;
+  if(d.o3!=null)   s += d.o3>140?18 : d.o3>100?14 : d.o3>60?8 : 2;
+  const pollen = [d.grass,d.birch,d.rag].filter(v=>v!=null);
+  if(pollen.length){ const x=Math.max(...pollen); s += x>150?18 : x>50?14 : x>10?8 : 2; }
+  if(d.rh!=null)    s += (d.rh<30||d.rh>85)?8 : (d.rh<40||d.rh>75)?4 : 0;
+  if(d.t!=null)     s += (d.t<5||d.t>32)?6 : (d.t<10||d.t>28)?3 : 0;
+  if(d.wind!=null)  s += d.wind>12?6 : d.wind>8?3 : 0;
+  if(d.p!=null)     s += d.p<1000?4 : d.p<1005?2 : 0;
+  if(d.uv!=null)    s += d.uv>7?4 : d.uv>5?2 : 0;
+  return clamp(Math.round(s),0,100);
+}
+function levelFromScore(s){
+  if (s<25) return {label:"低い", cls:"low"};
+  if (s<50) return {label:"中程度", cls:"mod"};
+  if (s<75) return {label:"高い", cls:"high"};
+  return {label:"非常に高い", cls:"vhi"};
+}
+function buildAdvice(s,d){
+  const L = levelFromScore(s).label, adv=[];
+  if(L==="低い"){ adv.push("通常どおり活動可。吸入薬は医師の指示どおり携帯。"); }
+  else if(L==="中程度"){
+    adv.push("屋外の激しい運動は短めに。マスク携帯を。");
+    if(d.pm25>35) adv.push("PM2.5やや高め：洗濯物は部屋干し推奨。");
+    if(d.o3>100) adv.push("日中の長時間外出は控えめに。");
+  }else if(L==="高い"){
+    adv.push("外出時間を短く。人混み・道路沿いは回避。");
+    if(d.p<1000) adv.push("低気圧傾向：発作の兆しに注意。");
+    if(d.wind>8) adv.push("強風：花粉・粉じん対策（眼鏡・マスク）。");
+  }else{
+    adv.push("できるだけ屋内に。窓は閉め、空気清浄機を強めに。");
+    adv.push("症状悪化時は早めに受診・救急相談（#7119 等）。");
+  }
+  return adv;
+}
+
+/* ====== 表示 ====== */
+function setArc(score){
+  const pct=clamp(score,0,100)/100, R=420, cx=500, cy=360;
+  const ex = cx + R*Math.cos(Math.PI - Math.PI*pct);
+  const ey = cy - R*Math.sin(Math.PI - Math.PI*pct);
+  $("#arc").setAttribute("d",`M80 360 A 420 420 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+  $("#knob").setAttribute("cx",ex.toFixed(1));
+  $("#knob").setAttribute("cy",ey.toFixed(1));
+}
+async function update(lat, lon, label="この周辺"){
+  $("#where").textContent = label;
+  $("#levelPill").textContent = "計算中…"; $("#score").textContent="--";
+  $("#labelMain").textContent=""; $("#labelSub").textContent="";
+  $("#miniForecast").innerHTML=""; $("#adviceList").innerHTML="";
+  try{
+    const d = await fetchAll(+lat, +lon);
+    $("#pm25").textContent=fmt(d.pm25); $("#o3").textContent=fmt(d.o3);
+    $("#rh").textContent=fmt(d.rh); $("#t").textContent=fmt(d.t);
+    $("#wind").textContent=fmt(d.wind); $("#p").textContent=fmt(d.p);
+    $("#uv").textContent=fmt(d.uv);
+    const pol = (d.grass??d.birch??d.rag)==null ? "--" :
+      (Math.max(d.grass||0,d.birch||0,d.rag||0)<=10?"低":
+       Math.max(d.grass||0,d.birch||0,d.rag||0)<=50?"中":
+       Math.max(d.grass||0,d.birch||0,d.rag||0)<=150?"高":"非常に高");
+    $("#pollen").textContent = pol;
+
+    const score = computeScore(d);
+    const L = levelFromScore(score);
+    $("#score").textContent=score; $("#labelMain").textContent=L.label;
+    $("#labelSub").textContent=`総合スコア ${score}`;
+    $("#levelPill").className="pill "+L.cls; $("#levelPill").textContent=L.label;
+    setArc(score);
+    $("#updated").textContent=new Date().toTimeString().slice(0,5)+" 更新";
+
+    $("#adviceList").innerHTML = buildAdvice(score,d).map(s=>`<li>${s}</li>`).join("");
+    $("#miniForecast").innerHTML = d.mini.map(m=>`
+      <div class="kpi">
+        <span class="tiny">${m.hh||"--:--"}</span>
+        <span class="tiny">PM2.5 ${fmt(m.pm25)} / O3 ${fmt(m.o3)}</span>
+        <span class="tiny">湿度 ${fmt(m.rh)}%・風 ${fmt(m.wind)}m/s</span>
+      </div>
+    `).join("");
+  }catch(e){
+    console.error(e);
+    showToast("データ取得に失敗しました。少し待って再試行してください。");
+  }
+}
+
+/* ====== 地名検索（Open-Meteo Geocoding） ====== */
+async function geocode(q){
+  if(!q || q.trim().length<2) return [];
+  const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&format=json`;
+  const j = await cachedFetchJSON(url, 60*60*1000);
+  const res = j?.results || [];
+  return res.map(r=>({name:[r.name,r.admin1,r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude}));
+}
+const doSearch = debounce(async ()=>{
+  const q=$("#place").value.trim(); const ul=$("#results");
+  if(!q){ ul.innerHTML=""; return; }
+  ul.innerHTML = `<li class="muted tiny">検索中…</li>`;
+  const list = await geocode(q);
+  if(!list.length){ ul.innerHTML=`<li class="muted tiny">見つかりませんでした</li>`; return; }
+  ul.innerHTML = list.map(it=>`<li><button data-lat="${it.lat}" data-lon="${it.lon}" data-name="${it.name}">${it.name}</button></li>`).join("");
+  ul.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      update(+b.dataset.lat, +b.dataset.lon, b.dataset.name);
+      pushRecent({name:b.dataset.name, lat:+b.dataset.lat, lon:+b.dataset.lon});
+      renderRecent();
+      showToast(`地点を設定：${b.dataset.name}`);
+    });
+  });
+}, 350);
+
+/* ====== GPS ====== */
+function useGPS(){
+  if(!navigator.geolocation){ showToast("この端末では位置情報が使えません。"); return; }
+  showToast("位置情報を取得中…");
+  navigator.geolocation.getCurrentPosition(
+    pos=>{ update(pos.coords.latitude, pos.coords.longitude, "現在地"); },
+    _=>{ showToast("位置情報が拒否されました。『地点を指定』から地名検索を使ってください。"); },
+    {enableHighAccuracy:true, timeout:8000, maximumAge:120000}
+  );
+}
+
+/* ====== 初期化 & 配線 ====== */
+function togglePicker(){
+  const p=$("#picker"); const open=p.style.display!=="none";
+  p.style.display = open ? "none" : "block";
+  $("#openPicker").setAttribute("aria-expanded", String(!open));
+  if(!open) renderRecent();
+}
+$("#openPicker").addEventListener("click", togglePicker);
+$("#search").addEventListener("click", ()=>doSearch());
+$("#place").addEventListener("input", ()=>doSearch());
+$("#place").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(); });
+$("#useGps").addEventListener("click", useGPS);
+$("#refreshBtn").addEventListener("click", ()=>{ showToast("最新の値に更新します"); update(currentLat, currentLon, $("#where").textContent || "この周辺"); });
+
+let currentLat = 35.68, currentLon = 139.76; // 初期：東京
+const _origUpdate = update;
+update = async (lat, lon, label)=>{
+  currentLat = +lat; currentLon = +lon;
+  return _origUpdate(lat, lon, label);
+};
+update(currentLat, currentLon, "東京周辺");
 </script>
 </body>
 </html>
