@@ -26,7 +26,7 @@
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
 
-  /* ボタン */
+  /* Buttons */
   button{ font-size:16px; padding:12px 14px; border-radius:12px;
           border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
           background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%);
@@ -47,7 +47,7 @@
   .pill.high{ background:color-mix(in oklab, var(--hi) 25%, transparent); color:#a35300;}
   .pill.vhi{ background:color-mix(in oklab, var(--vhi) 25%, transparent); color:#8a0b0b;}
 
-  /* ゲージ：はみ出し防止 */
+  /* Gauge: prevent clipping */
   .gauge{ width:100%; aspect-ratio:2.2/1; overflow:visible; display:block; }
 
   .tiny{ font-size:12px; }
@@ -57,12 +57,12 @@
   ul{ padding-left:18px; margin:8px 0 0; }
 </style>
 
-<!-- 公開用キャッシュバスター -->
+<!-- cache buster -->
 <script>
-  const APP_VERSION = "1.2.0";   // ← 公開のたびに上げる
-  (function ensureVersionParam(){
+  const APP_VERSION = "1.2.2";
+  (function(){
     const url = new URL(location.href);
-    if (url.searchParams.get("v") !== APP_VERSION){
+    if(url.searchParams.get("v") !== APP_VERSION){
       url.searchParams.set("v", APP_VERSION);
       location.replace(url.toString());
     }
@@ -91,23 +91,21 @@
       </div>
     </div>
 
-    <!-- 余白を増やし弧を下げる（切れ防止） -->
+    <!-- unified: center(550,500), radius 440, start x = 110 -->
     <svg class="gauge" viewBox="0 0 1100 600" aria-hidden="true">
       <defs>
         <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#12b886"/>
+          <stop offset="0%"  stop-color="#12b886"/>
           <stop offset="33%" stop-color="#ffd43b"/>
           <stop offset="66%" stop-color="#ff922b"/>
           <stop offset="100%" stop-color="#fa5252"/>
         </linearGradient>
       </defs>
-      <!-- 背景弧 -->
-      <path d="M120 500 A 440 440 0 0 1 980 500"
+      <path d="M110 500 A 440 440 0 0 1 990 500"
             stroke="rgba(128,128,128,.25)" stroke-width="44" fill="none" stroke-linecap="round"/>
-      <!-- 値弧 -->
-      <path id="arc" d="M120 500 A 440 440 0 0 1 120 500"
+      <path id="arc" d="M110 500 A 440 440 0 0 1 110 500"
             stroke="url(#grad)" stroke-width="44" fill="none" stroke-linecap="round"/>
-      <circle id="knob" cx="120" cy="500" r="14" fill="white" opacity=".9"/>
+      <circle id="knob" cx="110" cy="500" r="14" fill="white" opacity=".9"/>
       <text id="labelMain" x="550" y="285" text-anchor="middle" font-size="42" font-weight="800"></text>
       <text id="labelSub"  x="550" y="330" text-anchor="middle" font-size="22" opacity=".8"></text>
     </svg>
@@ -154,15 +152,15 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ========= util ========= */
+/* ===== utils ===== */
 const $ = s => document.querySelector(s);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt = n => (n==null||Number.isNaN(n)) ? "--" : Math.round(n*10)/10;
 function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
 
-/* ========= tiny cache ========= */
+/* ===== tiny cache ===== */
 function cacheKey(ns,obj){ return ns+":"+JSON.stringify(obj); }
-function setCache(k,v,ttl){ try{ localStorage.setItem(k, JSON.stringify({v, exp:Date.now()+ttl})); }catch{} }
+function setCache(k,v,ttl){ try{ localStorage.setItem(k, JSON.stringify({v,exp:Date.now()+ttl})); }catch{} }
 function getCache(k){ try{ const j=localStorage.getItem(k); if(!j) return null; const o=JSON.parse(j); return (o.exp>Date.now())?o.v:null; }catch{ return null; } }
 async function cachedFetchJSON(url, ttlMs){
   const k = cacheKey("f",{url}); const hit = getCache(k); if(hit) return hit;
@@ -170,7 +168,7 @@ async function cachedFetchJSON(url, ttlMs){
        const j = await r.json(); setCache(k,j,ttlMs); return j; }catch{ return {}; }
 }
 
-/* ========= geocoding (Open-Meteo → Nominatim fallback) ========= */
+/* ===== geocoding (Open-Meteo → Nominatim fallback) ===== */
 async function geocode(q){
   if(!q || q.trim().length < 2) return [];
   const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&format=json`;
@@ -185,7 +183,7 @@ async function geocode(q){
   }catch{ return []; }
 }
 
-/* ========= data fetch ========= */
+/* ===== data fetch ===== */
 function pickIndex(times){
   if (!times || !times.length) return -1;
   const ms = times.map(t => new Date(t.replace("T"," ") + ":00").getTime());
@@ -241,7 +239,7 @@ async function fetchAll(lat, lon){
   };
 }
 
-/* ========= scoring ========= */
+/* ===== scoring / advice ===== */
 function computeScore(d){
   let pts=0;
   if(d.pm25!=null){const x=d.pm25; pts += (x<=12?2:x<=25?10:x<=35?18:x<=55?28:x<=90?35:40);}
@@ -270,19 +268,19 @@ function buildAdvice(s,d){
   return a;
 }
 
-/* ========= gauge drawing ========= */
+/* ===== gauge drawing (unified) ===== */
 function setArc(score){
   const pct = clamp(score,0,100) / 100;
-  const R=440, cx=550, cy=500;             // SVG と一致
+  const R=440, cx=550, cy=500;      // must match SVG
   const ex = cx + R*Math.cos(Math.PI - Math.PI*pct);
   const ey = cy - R*Math.sin(Math.PI - Math.PI*pct);
-  $("#arc").setAttribute("d", `M120 500 A 440 440 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+  $("#arc").setAttribute("d", `M110 500 A 440 440 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
   $("#knob").setAttribute("cx", ex.toFixed(1));
   $("#knob").setAttribute("cy", ey.toFixed(1));
 }
 function setPill(el,level){ el.className = "pill " + ({低い:"low",中程度:"mod",高い:"high",非常に高い:"vhi"}[level]||"low"); el.textContent = level; }
 
-/* ========= main update ========= */
+/* ===== main update ===== */
 async function update(lat,lon,label="この周辺"){
   $("#where").textContent = label;
   $("#levelPill").textContent = "計算中…";
@@ -322,7 +320,7 @@ async function update(lat,lon,label="この周辺"){
     </div>`).join("");
 }
 
-/* ========= GPS ========= */
+/* ===== GPS ===== */
 async function useGPS(){
   const btn=$("#useGps"); btn.classList.add("loading");
   if(!navigator.geolocation){ showToast("この端末では位置情報が使えません"); btn.classList.remove("loading"); return; }
@@ -334,7 +332,7 @@ async function useGPS(){
   );
 }
 
-/* ========= UI wiring ========= */
+/* ===== UI wiring ===== */
 $("#refreshBtn").addEventListener("click", ()=>{ useGPS(); });
 $("#useGps").addEventListener("click", useGPS);
 $("#openPicker").addEventListener("click", ()=>{
@@ -359,7 +357,7 @@ $("#placeInput").addEventListener("input", async e=>{
   }));
 });
 
-/* ========= init ========= */
+/* ===== init ===== */
 document.addEventListener("DOMContentLoaded", ()=>{ useGPS(); });
 </script>
 </body>
