@@ -23,43 +23,37 @@
   .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  button, .linklike{ font-size:16px; padding:12px 14px; border-radius:12px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
-                     background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); }
-  button:active{ transform:scale(0.99); }
-  input[type="text"]{ padding:12px; border-radius:10px; border:1px solid color-mix(in oklab,var(--fg) 15%, transparent); background:transparent; color:var(--fg); }
+  button{ font-size:16px; padding:10px 14px; border-radius:12px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+          background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); }
+  button:active{ transform:scale(0.98); }
   .muted{ color:var(--muted); font-size:13px; }
   .grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .kpi{ display:flex; flex-direction:column; gap:4px; padding:10px; border-radius:12px;
         background:color-mix(in oklab,var(--card) 70%, var(--bg) 30%); }
   .kpi b{ font-size:18px; }
-  .level{ font-weight:700; }
   .pill{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:13px; }
   .pill.low{ background:color-mix(in oklab, var(--ok) 25%, transparent); color: var(--ok);}
   .pill.mod{ background:color-mix(in oklab, var(--med) 25%, transparent); color: #a07b00;}
   .pill.high{ background:color-mix(in oklab, var(--hi) 25%, transparent); color:#a35300;}
   .pill.vhi{ background:color-mix(in oklab, var(--vhi) 25%, transparent); color:#8a0b0b;}
   .gauge{ width:100%; aspect-ratio:2.2/1; }
-  .flex{ display:flex; gap:10px; align-items:center; }
   .advice li{ margin:6px 0; }
   .tiny{ font-size:12px; }
   .toast{ position:fixed; left:12px; right:12px; bottom:16px; background:var(--card);
           border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); padding:12px; border-radius:12px; display:none; }
-  .chip{ font-size:13px; padding:6px 10px; border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
-         background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); margin:6px 6px 0 0; display:inline-block; }
-  /* 地名検索の候補リスト */
-  .results{ margin:8px 0 0; padding:0; list-style:none; max-height:240px; overflow:auto; }
+  .results{ margin:8px 0 0; padding:0; list-style:none; max-height:220px; overflow:auto; }
   .results li{ margin:6px 0; }
-  .results button{ width:100%; text-align:left; padding:10px 12px; border-radius:10px; }
+  .results button{ width:100%; text-align:left; padding:8px 12px; border-radius:10px; }
   .results .tiny{ opacity:.8; font-size:12px; display:block; }
 </style>
 </head>
 <body>
 <header class="row">
   <h1>喘息注意度チェッカー</h1>
-  <div class="row" style="gap:8px;">
-    <button id="refreshBtn" aria-label="再読込">更新</button>
-    <button id="useGps" aria-label="現在地">現在地</button>
-    <button id="openPicker" aria-expanded="false" aria-controls="picker">地点を指定</button>
+  <div class="row" style="gap:6px;">
+    <button id="refreshBtn">更新</button>
+    <button id="useGps">現在地</button>
+    <button id="openPicker">地点を指定</button>
   </div>
 </header>
 
@@ -67,10 +61,10 @@
   <section class="card" id="statusCard">
     <div class="row">
       <div>
-        <div class="muted" id="where">位置未設定</div>
-        <div class="flex" style="gap:8px; margin-top:6px;">
-          <span id="levelPill" class="pill">—</span>
-          <span class="muted" id="updated">--:-- 更新</span>
+        <div class="muted" id="where">位置取得中…</div>
+        <div style="margin-top:6px;">
+          <span id="levelPill" class="pill">計算中…</span>
+          <span class="muted tiny" id="updated">--:-- 更新</span>
         </div>
       </div>
       <div style="min-width:140px; text-align:right;">
@@ -79,541 +73,91 @@
       </div>
     </div>
     <svg class="gauge" viewBox="0 0 1000 450" aria-hidden="true">
-      <defs>
-        <linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stop-color="#12b886"/>
-          <stop offset="33%" stop-color="#ffd43b"/>
-          <stop offset="66%" stop-color="#ff922b"/>
-          <stop offset="100%" stop-color="#fa5252"/>
-        </linearGradient>
-      </defs>
-      <!-- background arc -->
+      <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#12b886"/><stop offset="33%" stop-color="#ffd43b"/>
+        <stop offset="66%" stop-color="#ff922b"/><stop offset="100%" stop-color="#fa5252"/>
+      </linearGradient></defs>
       <path d="M80 360 A 420 420 0 0 1 920 360" stroke="rgba(128,128,128,.25)" stroke-width="44" fill="none" stroke-linecap="round"/>
-      <!-- value arc -->
       <path id="arc" d="M80 360 A 420 420 0 0 1 80 360" stroke="url(#grad)" stroke-width="44" fill="none" stroke-linecap="round"/>
       <circle id="knob" cx="80" cy="360" r="14" fill="white" opacity=".9"/>
       <text id="labelMain" x="500" y="245" text-anchor="middle" font-size="42" font-weight="800"></text>
       <text id="labelSub" x="500" y="285" text-anchor="middle" font-size="24" opacity=".8"></text>
     </svg>
-    <div class="muted tiny">データ: Open-Meteo（気象／大気質／花粉）・地名検索: Nominatim</div>
+    <div class="muted tiny">データ: Open-Meteo</div>
   </section>
 
   <section class="card">
     <div class="grid">
-      <div class="kpi"><span class="muted tiny">PM2.5 μg/m³</span><b id="pm25">--</b></div>
-      <div class="kpi"><span class="muted tiny">オゾン μg/m³</span><b id="o3">--</b></div>
-      <div class="kpi"><span class="muted tiny">湿度 %</span><b id="rh">--</b></div>
-      <div class="kpi"><span class="muted tiny">気温 °C</span><b id="t">--</b></div>
-      <div class="kpi"><span class="muted tiny">風速 m/s</span><b id="wind">--</b></div>
-      <div class="kpi"><span class="muted tiny">気圧 hPa</span><b id="p">--</b></div>
-      <div class="kpi"><span class="muted tiny">花粉（概況）</span><b id="pollen">--</b></div>
-      <div class="kpi"><span class="muted tiny">光化学/UV 指標</span><b id="uv">--</b></div>
+      <div class="kpi"><span class="muted tiny">PM2.5</span><b id="pm25">--</b></div>
+      <div class="kpi"><span class="muted tiny">O3</span><b id="o3">--</b></div>
+      <div class="kpi"><span class="muted tiny">湿度%</span><b id="rh">--</b></div>
+      <div class="kpi"><span class="muted tiny">気温℃</span><b id="t">--</b></div>
+      <div class="kpi"><span class="muted tiny">風速m/s</span><b id="wind">--</b></div>
+      <div class="kpi"><span class="muted tiny">気圧hPa</span><b id="p">--</b></div>
+      <div class="kpi"><span class="muted tiny">花粉</span><b id="pollen">--</b></div>
+      <div class="kpi"><span class="muted tiny">UV</span><b id="uv">--</b></div>
     </div>
   </section>
 
-  <section class="card">
-    <div class="row"><b>アドバイス</b></div>
-    <ul class="advice" id="adviceList" style="padding-left:18px; margin:8px 0 0;"></ul>
-  </section>
-
-  <section class="card">
-    <div class="row"><b>1時間ごとの見通し（次の3時間）</b></div>
-    <div class="grid" id="miniForecast"></div>
-  </section>
+  <section class="card"><b>アドバイス</b><ul id="adviceList"></ul></section>
+  <section class="card"><b>1時間ごとの見通し（次の3時間）</b><div class="grid" id="miniForecast"></div></section>
 
   <section class="card" id="picker" style="display:none;">
-    <div class="row" style="gap:8px;">
-      <input id="place" type="text" placeholder="地名・駅名・住所で検索（例：新宿、札幌駅、大阪市北区）" style="flex:1;">
-      <button id="search">検索</button>
-    </div>
-    <div class="muted tiny" style="margin-top:6px;">候補からタップで決定。連続検索しすぎると一時的に制限されます。</div>
+    <label class="tiny muted">地名・駅名・住所で検索</label>
+    <div class="row"><input id="place" style="flex:1; padding:10px;" placeholder="例: 新宿, 大阪市"/><button id="search">検索</button></div>
     <ul id="results" class="results"></ul>
-    <div id="recentWrap" style="margin-top:10px;">
-      <div class="muted tiny">最近使った地点</div>
-      <div id="recent"></div>
-    </div>
   </section>
-
-  <div class="muted tiny">このアプリは参考情報です。症状が強い場合は医療機関へ。GPSは公開URLでのみ有効になりやすいです。</div>
 </main>
 
-<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-/* =======================
-   軽量キャッシュ＆ユーティリティ（しっかり版）
-   - メモリ + localStorage（TTL付き）
-   - 失敗キャッシュ（短TTL）
-   - LRU風掃除（件数上限）
-   - 同時リクエスト合流
-   ======================= */
-const CACHE_PREFIX = "asthma:";
-const MAX_ITEMS = 120; // localStorageに保存する最大件数の目安
-const MemCache = new Map();          // メモリ（セッション）
-const Inflight = new Map();          // 同じURLへの並列fetchを1本に束ねる
+// ---- キャッシュユーティリティ ----
+const MemCache = new Map();
+function cacheKey(url){ return "fetch:"+url; }
+function setCache(url, value, ttl){ const until=Date.now()+ttl; MemCache.set(url,{until,value}); localStorage.setItem(cacheKey(url),JSON.stringify({until,value})); }
+function getCache(url){ const k=cacheKey(url), now=Date.now(); const m=MemCache.get(url); if(m&&m.until>now) return m.value; try{const o=JSON.parse(localStorage.getItem(k)||"{}"); if(o.until>now){MemCache.set(url,o); return o.value;} localStorage.removeItem(k);}catch{} return null; }
+async function cachedFetchJSON(url,ttl){ const hit=getCache(url); if(hit) return hit; try{const r=await fetch(url); if(!r.ok) throw 0; const j=await r.json(); setCache(url,j,ttl); return j;}catch(e){console.error("fetch失敗",url); return{};} }
 
-function cacheKey(prefix, obj) { return CACHE_PREFIX + prefix + ":" + JSON.stringify(obj); }
-
-function now(){ return Date.now(); }
-
-function loadLS(key){
-  try { return JSON.parse(localStorage.getItem(key)); } catch(_) { return null; }
-}
-function saveLS(key, obj){
-  try { localStorage.setItem(key, JSON.stringify(obj)); return true; } catch(_) { return false; }
-}
-function delLS(key){ try{ localStorage.removeItem(key); }catch(_){} }
-
-function setCache(key, value, ttlMs, isFail=false){
-  const until = now() + ttlMs;
-  const rec = { until, value, atime: now(), fail: !!isFail };
-  MemCache.set(key, rec);
-  // LRU風：indexにキーを蓄える
-  const idxKey = CACHE_PREFIX + "index";
-  let idx = loadLS(idxKey) || [];
-  // 既存重複を排除
-  idx = idx.filter(k => k !== key);
-  idx.push(key);
-  // 保存＆容量超過なら古いもの削除
-  saveLS(key, rec);
-  while (idx.length > MAX_ITEMS){
-    const k = idx.shift();
-    delLS(k);
-  }
-  saveLS(idxKey, idx);
-}
-function getCache(key){
-  const recMem = MemCache.get(key);
-  if (recMem && recMem.until > now()){
-    recMem.atime = now();
-    return recMem;
-  }
-  const rec = loadLS(key);
-  if (rec && rec.until > now()){
-    rec.atime = now();
-    MemCache.set(key, rec);
-    return rec;
-  }
-  // 期限切れは掃除
-  if (rec) delLS(key);
-  return null;
-}
-async function cachedFetchJSON(url, ttlMs, failTtlMs=60000){
-  const key = cacheKey("fetch", {url});
-  const hit = getCache(key);
-  if (hit){
-    if (hit.fail) throw new Error("cached-fail");
-    return hit.value;
-  }
-  if (Inflight.has(key)) return Inflight.get(key); // 合流
-  const p = (async ()=>{
-    const res = await fetch(url, {headers:{'Accept':'application/json'}});
-    if (!res.ok){
-      setCache(key, {error:true, status:res.status}, failTtlMs, true);
-      throw new Error("network");
-    }
-    const json = await res.json();
-    setCache(key, json, ttlMs);
-    return json;
-  })().finally(()=>Inflight.delete(key));
-  Inflight.set(key, p);
-  return p;
-}
-// 入力の連打対策
-function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); }; }
-
-// 便利関数
-const $ = sel => document.querySelector(sel);
-const fmt = n => (n==null||Number.isNaN(n)) ? "--" : Math.round(n*10)/10;
-const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-function roundCoord(x){ return Math.round(x*100)/100; } // 0.01度 ≒ 1km
-
-// 最近の地点を5件保存
-function pushRecent(place){ // place: {name, lat, lon}
-  const key = CACHE_PREFIX + "recent";
-  let arr = loadLS(key) || [];
-  arr = arr.filter(p => !(Math.abs(p.lat-place.lat)<1e-6 && Math.abs(p.lon-place.lon)<1e-6));
-  arr.unshift({ name: place.name, lat: place.lat, lon: place.lon });
-  arr = arr.slice(0,5);
-  saveLS(key, arr);
-}
-function renderRecent(){
-  const arr = loadLS(CACHE_PREFIX+"recent") || [];
-  const box = $("#recent");
-  if (!arr.length){ $("#recentWrap").style.display="none"; return; }
-  $("#recentWrap").style.display="block";
-  box.innerHTML = arr.map(p=>`<button class="chip" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${p.name.replace(/"/g,'&quot;')}">${shortLabel(p.name)}</button>`).join("");
-  box.querySelectorAll("button").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const lat = parseFloat(btn.dataset.lat);
-      const lon = parseFloat(btn.dataset.lon);
-      const label = shortLabel(btn.dataset.name);
-      update(lat, lon, label);
-      showToast(`地点を設定：${label}`);
-    });
-  });
+// ---- データ取得 ----
+async function fetchAll(lat,lon){
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"Asia/Tokyo";
+  const base=`lat=${lat}&longitude=${lon}&timezone=${encodeURIComponent(tz)}`;
+  const aq=`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=pm2_5,ozone,uv_index&timezone=${tz}`;
+  const wx=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m&timezone=${tz}`;
+  const pl=`https://pollen-api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=grass_pollen,birch_pollen,ragweed_pollen&timezone=${tz}`;
+  const ttl=10*60*1000;
+  const [aqJ,wxJ,plJ]=await Promise.all([cachedFetchJSON(aq,ttl),cachedFetchJSON(wx,ttl),cachedFetchJSON(pl,ttl)]);
+  const nowISO=new Date().toISOString().slice(0,13);
+  function pick(o,k){const arrT=o?.hourly?.time||[];const i=arrT.findIndex(t=>t.startsWith(nowISO));return i>=0?o.hourly[k]?.[i]:null;}
+  return {pm25:pick(aqJ,"pm2_5"),o3:pick(aqJ,"ozone"),uv:pick(aqJ,"uv_index"),
+          t:pick(wxJ,"temperature_2m"),rh:pick(wxJ,"relative_humidity_2m"),
+          wind:pick(wxJ,"wind_speed_10m"),p:pick(wxJ,"pressure_msl"),
+          grass:pick(plJ,"grass_pollen"),birch:pick(plJ,"birch_pollen"),rag:pick(plJ,"ragweed_pollen"),
+          mini:(()=>{const ts=wxJ?.hourly?.time||[];const i=ts.findIndex(t=>t.startsWith(nowISO));return [i+1,i+2,i+3].map(j=>({hh:ts[j]?.slice(11,16),pm25:aqJ?.hourly?.pm2_5?.[j],o3:aqJ?.hourly?.ozone?.[j],rh:wxJ?.hourly?.relative_humidity_2m?.[j],wind:wxJ?.hourly?.wind_speed_10m?.[j]}));})()};
 }
 
-/* =======================
-   データ取得
-   ======================= */
-async function fetchAll(lat, lon){
-  const latR = roundCoord(+lat), lonR = roundCoord(+lon);
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
+// ---- スコア計算（簡略） ----
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function computeScore(d){let s=0;if(d.pm25!=null)s+=d.pm25>35?30:d.pm25>15?15:5;if(d.o3!=null)s+=d.o3>100?15:d.o3>60?8:2;if(d.rh!=null)(d.rh<40||d.rh>75)?s+=5:0;if(d.t!=null)(d.t<10||d.t>30)?s+=5:0;if(d.wind!=null&&d.wind>8)s+=5;if(d.p!=null&&d.p<1005)s+=3; if(d.uv!=null&&d.uv>6)s+=4;if(d.grass||d.birch||d.rag){const x=Math.max(d.grass||0,d.birch||0,d.rag||0);s+=x>50?15:x>10?8:2;} return clamp(s,0,100);}
+function level(s){if(s<25)return["低い","low"];if(s<50)return["中程度","mod"];if(s<75)return["高い","high"];return["非常に高い","vhi"];}
 
-  const aq = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latR}&longitude=${lonR}&hourly=pm2_5,pm10,ozone,uv_index,uv_index_clear_sky&timezone=${encodeURIComponent(tz)}`;
-  const wx = `https://api.open-meteo.com/v1/forecast?latitude=${latR}&longitude=${lonR}&hourly=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m&timezone=${encodeURIComponent(tz)}`;
-  const pl = `https://pollen-api.open-meteo.com/v1/forecast?latitude=${latR}&longitude=${lonR}&hourly=grass_pollen,birch_pollen,ragweed_pollen&timezone=${encodeURIComponent(tz)}`;
+// ---- UI 更新 ----
+function showToast(msg){const t=document.querySelector("#toast");t.textContent=msg;t.style.display="block";setTimeout(()=>t.style.display="none",2500);}
+async function update(lat,lon,label="地点"){document.querySelector("#where").textContent=label;const d=await fetchAll(lat,lon);document.querySelector("#pm25").textContent=d.pm25??"--";document.querySelector("#o3").textContent=d.o3??"--";document.querySelector("#rh").textContent=d.rh??"--";document.querySelector("#t").textContent=d.t??"--";document.querySelector("#wind").textContent=d.wind??"--";document.querySelector("#p").textContent=d.p??"--";document.querySelector("#uv").textContent=d.uv??"--";document.querySelector("#pollen").textContent=(d.grass||d.birch||d.rag)?(Math.max(d.grass||0,d.birch||0,d.rag||0)>50?"高":"中"):"--";const score=computeScore(d);const [lab,cls]=level(score);document.querySelector("#score").textContent=score;document.querySelector("#levelPill").className="pill "+cls;document.querySelector("#levelPill").textContent=lab;document.querySelector("#labelMain").textContent=lab;document.querySelector("#labelSub").textContent=`総合 ${score}`;document.querySelector("#updated").textContent=new Date().toTimeString().slice(0,5)+" 更新";document.querySelector("#adviceList").innerHTML=lab==="低い"?"<li>通常どおり活動可</li>":"<li>外出は控えめに</li>";document.querySelector("#miniForecast").innerHTML=d.mini.map(m=>`<div class="kpi"><span>${m.hh||"--"}</span><span class="tiny">PM2.5 ${m.pm25??"--"}</span></div>`).join("");}
 
-  const ttl = 10*60*1000; // 10分
-  const [aqJson, wxJson, plJson] = await Promise.all([
-    cachedFetchJSON(aq, ttl),
-    cachedFetchJSON(wx, ttl),
-    cachedFetchJSON(pl, ttl)
-  ]);
+// ---- GPS ----
+document.querySelector("#useGps").onclick=()=>{if(!navigator.geolocation){showToast("位置情報NG");return;}navigator.geolocation.getCurrentPosition(p=>update(p.coords.latitude,p.coords.longitude,"現在地"),()=>showToast("位置情報が拒否されました"));};
 
-  // pick current hour index
-  const nowISO = new Date().toISOString().slice(0,13); // YYYY-MM-DDTHH
-  function pick(obj, key){
-    const arrT = obj?.hourly?.time || [];
-    const idx = arrT.findIndex(t => t.startsWith(nowISO));
-    if(idx<0) return null;
-    const arr = obj.hourly[key] || [];
-    return arr[idx] ?? null;
-  }
-  const pm25 = pick(aqJson, "pm2_5");
-  const pm10 = pick(aqJson, "pm10");
-  const o3   = pick(aqJson, "ozone");
-  const uv   = pick(aqJson, "uv_index") ?? pick(aqJson, "uv_index_clear_sky");
-  const t    = pick(wxJson, "temperature_2m");
-  const rh   = pick(wxJson, "relative_humidity_2m");
-  const wind = pick(wxJson, "wind_speed_10m");
-  const p    = pick(wxJson, "pressure_msl");
-  const grass= pick(plJson, "grass_pollen");
-  const birch= pick(plJson, "birch_pollen");
-  const rag  = pick(plJson, "ragweed_pollen");
+// ---- 地名検索 ----
+async function geocode(q){if(!q)return[];const url=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&format=json`;const j=await cachedFetchJSON(url,3600*1000);return j.results||[];}
+function shortLabel(n){return [n.name,n.admin1,n.country].filter(Boolean).join(", ");}
+document.querySelector("#search").onclick=async()=>{const q=document.querySelector("#place").value.trim();const res=await geocode(q);const ul=document.querySelector("#results");if(!res.length){ul.innerHTML="<li class='muted tiny'>見つかりません</li>";return;}ul.innerHTML=res.map(r=>`<li><button data-lat="${r.latitude}" data-lon="${r.longitude}" data-name="${shortLabel(r)}">${shortLabel(r)}</button></li>`).join("");ul.querySelectorAll("button").forEach(b=>b.onclick=()=>update(b.dataset.lat,b.dataset.lon,b.dataset.name));};
+document.querySelector("#openPicker").onclick=()=>{const p=document.querySelector("#picker");p.style.display=p.style.display==="none"?"block":"none";};
+document.querySelector("#refreshBtn").onclick=()=>showToast("再読込: 地点を指定してください");
 
-  // small forecast (next 3 hours)
-  const times = aqJson?.hourly?.time || wxJson?.hourly?.time || [];
-  const nowIndex = times.findIndex(t => t.startsWith(nowISO));
-  const nextIdxs = [nowIndex+1, nowIndex+2, nowIndex+3].filter(i => i>0 && i < times.length);
-  const mini = nextIdxs.map(i => {
-    const hh = times[i]?.slice(11,16) ?? "--:--";
-    return {
-      hh,
-      pm25: aqJson?.hourly?.pm2_5?.[i],
-      o3:   aqJson?.hourly?.ozone?.[i],
-      rh:   wxJson?.hourly?.relative_humidity_2m?.[i],
-      wind: wxJson?.hourly?.wind_speed_10m?.[i]
-    }
-  });
-  return {pm25, pm10, o3, uv, t, rh, wind, p, grass, birch, rag, mini};
-}
-
-/* =======================
-   スコアリング
-   ======================= */
-function computeScore(d){
-  let pts = 0;
-
-  // PM2.5（0–40pt）
-  if(d.pm25!=null){
-    const x = d.pm25;
-    let s = 0;
-    if (x<=12) s = 2;
-    else if (x<=25) s = 10;
-    else if (x<=35) s = 18;
-    else if (x<=55) s = 28;
-    else if (x<=90) s = 35;
-    else s = 40;
-    pts += s;
-  }
-
-  // O3（0–18pt）
-  if(d.o3!=null){
-    const x = d.o3; // μg/m3
-    let s=0;
-    if (x<=60) s=2;
-    else if (x<=100) s=8;
-    else if (x<=140) s=14;
-    else s=18;
-    pts+=s;
-  }
-
-  // 花粉（0–18pt）
-  const pollen = [d.grass, d.birch, d.rag].filter(v=>v!=null);
-  if(pollen.length){
-    const x = Math.max(...pollen);
-    let s=0;
-    if (x<=10) s=2;
-    else if (x<=50) s=8;
-    else if (x<=150) s=14;
-    else s=18;
-    pts+=s;
-  }
-
-  // 湿度（0–8pt）
-  if(d.rh!=null){
-    const x = d.rh;
-    let s=0;
-    if (x<30 || x>85) s=8;
-    else if (x<40 || x>75) s=4;
-    pts+=s;
-  }
-
-  // 気温（0–6pt）
-  if(d.t!=null){
-    const x = d.t;
-    let s=0;
-    if (x<5 || x>32) s=6;
-    else if (x<10 || x>28) s=3;
-    pts+=s;
-  }
-
-  // 風（0–6pt）
-  if(d.wind!=null){
-    const x = d.wind;
-    let s=0;
-    if (x>12) s=6;
-    else if (x>8) s=3;
-    pts+=s;
-  }
-
-  // 気圧（0–4pt）
-  if(d.p!=null){
-    const x = d.p;
-    let s=0;
-    if (x<1000) s=4;
-    else if (x<1005) s=2;
-    pts+=s;
-  }
-
-  // UV（0–4pt）
-  if(d.uv!=null){
-    const x = d.uv;
-    let s=0;
-    if (x>7) s=4;
-    else if (x>5) s=2;
-    pts+=s;
-  }
-
-  const score = clamp(Math.round(pts), 0, 100);
-  return {score};
-}
-function levelFromScore(s){
-  if (s<25) return {label:"低い", cls:"low"};
-  if (s<50) return {label:"中程度", cls:"mod"};
-  if (s<75) return {label:"高い", cls:"high"};
-  return {label:"非常に高い", cls:"vhi"};
-}
-function buildAdvice(s, d){
-  const adv = [];
-  const L = levelFromScore(s).label;
-
-  if (L==="低い"){
-    adv.push("通常どおり活動可。吸入薬は医師の指示どおり携帯。");
-  } else if (L==="中程度"){
-    adv.push("屋外の激しい運動は短めに。マスク携帯を。");
-    if (d.pm25>35) adv.push("PM2.5がやや高め：洗濯物は部屋干し推奨。");
-    if (d.o3>100) adv.push("オゾンがやや高め：日中の長時間外出は控えめに。");
-  } else if (L==="高い"){
-    adv.push("外出時間を短く。人混み・道路沿いは回避。");
-    adv.push("必要に応じて予防吸入を検討（医師の指示優先）。");
-    if (d.p<1000) adv.push("低気圧傾向：発作の兆しに注意。");
-    if (d.wind>8) adv.push("強風：花粉・粉じん対策（眼鏡・マスク）。");
-  } else {
-    adv.push("できるだけ屋内に。窓は閉め、空気清浄機を強めに。");
-    adv.push("症状悪化時は早めに受診・救急相談（#7119 など地域の窓口）");
-  }
-  return adv;
-}
-
-/* =======================
-   UI & 表示
-   ======================= */
-let lastCoords = null;
-
-function setArc(score){
-  const pct = clamp(score,0,100)/100;
-  const R = 420, cx = 500, cy = 360;
-  const ex = cx + R*Math.cos(Math.PI - Math.PI*pct);
-  const ey = cy - R*Math.sin(Math.PI - Math.PI*pct);
-  $("#arc").setAttribute("d", `M80 360 A 420 420 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
-  $("#knob").setAttribute("cx", ex.toFixed(1));
-  $("#knob").setAttribute("cy", ey.toFixed(1));
-}
-function setPill(level){
-  const pill = $("#levelPill");
-  pill.className = "pill " + ({低い:"low", 中程度:"mod", 高い:"high", 非常に高い:"vhi"}[level] || "low");
-  pill.textContent = level;
-}
-function showToast(msg){
-  const t = $("#toast");
-  t.textContent = msg;
-  t.style.display = "block";
-  setTimeout(()=>{ t.style.display="none"; }, 2400);
-}
-
-async function update(lat, lon, label="この周辺"){
-  $("#where").textContent = label;
-  $("#levelPill").textContent = "計算中…";
-  $("#score").textContent = "--";
-  $("#labelMain").textContent = "";
-  $("#labelSub").textContent = "";
-  $("#miniForecast").innerHTML = "";
-
-  try{
-    const d = await fetchAll(lat, lon);
-    lastCoords = {lat, lon};
-
-    // KPIs
-    $("#pm25").textContent = fmt(d.pm25);
-    $("#o3").textContent = fmt(d.o3);
-    $("#rh").textContent = fmt(d.rh);
-    $("#t").textContent = fmt(d.t);
-    $("#wind").textContent = fmt(d.wind);
-    $("#p").textContent = fmt(d.p);
-    const pollenTxt = (d.grass??d.birch??d.rag) == null ? "—" :
-      (Math.max(d.grass||0, d.birch||0, d.rag||0) <= 10 ? "低" :
-       Math.max(d.grass||0, d.birch||0, d.rag||0) <= 50 ? "中" :
-       Math.max(d.grass||0, d.birch||0, d.rag||0) <= 150 ? "高" : "非常に高");
-    $("#pollen").textContent = pollenTxt;
-    $("#uv").textContent = fmt(d.uv);
-
-    // Score
-    const {score} = computeScore(d);
-    $("#score").textContent = score;
-    const L = levelFromScore(score);
-    setPill(L.label);
-    $("#labelMain").textContent = L.label;
-    $("#labelSub").textContent = `総合スコア ${score}`;
-    setArc(score);
-    $("#updated").textContent = new Date().toTimeString().slice(0,5) + " 更新";
-
-    // Advice
-    const adv = buildAdvice(score, d);
-    $("#adviceList").innerHTML = adv.map(s=>`<li>${s}</li>`).join("");
-
-    // Mini forecast
-    const box = $("#miniForecast");
-    box.innerHTML = d.mini.map(m=>`
-      <div class="kpi">
-        <span class="muted tiny">${m.hh}</span>
-        <div class="tiny">PM2.5 ${fmt(m.pm25)} / O3 ${fmt(m.o3)}</div>
-        <div class="tiny">湿度 ${fmt(m.rh)}%・風 ${fmt(m.wind)}m/s</div>
-      </div>
-    `).join("");
-  }catch(e){
-    showToast("データ取得に失敗しました。しばらくして再試行を。");
-  }
-}
-
-/* =======================
-   地名検索（Nominatim） + 逆ジオ
-   ======================= */
-function shortLabel(name){
-  const parts = name.split(",").map(s=>s.trim());
-  if(parts.length <= 3) return name;
-  return parts.slice(0,3).join(", ");
-}
-async function geocode(q){
-  if(!q || q.trim().length < 2) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=ja&q=${encodeURIComponent(q)}`;
-  const json = await cachedFetchJSON(url, 60*60*1000); // 1時間キャッシュ
-  return json.map(r=>({ name:r.display_name, lat:+r.lat, lon:+r.lon }));
-}
-async function reverseGeocode(lat, lon){
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&accept-language=ja&lat=${lat}&lon=${lon}`;
-  try{
-    const j = await cachedFetchJSON(url, 12*60*60*1000); // 12時間
-    return j.display_name || `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-  }catch(_){
-    return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-  }
-}
-async function searchPlace(){
-  const q = $("#place").value.trim();
-  if(!q){ showToast("地名を入力してください"); return; }
-  $("#results").innerHTML = `<li class="muted tiny">検索中…</li>`;
-  try{
-    const list = await geocode(q);
-    if(!list.length){
-      $("#results").innerHTML = `<li class="muted tiny">見つかりませんでした</li>`;
-      return;
-    }
-    $("#results").innerHTML = list.map(item=>`
-      <li>
-        <button data-lat="${item.lat}" data-lon="${item.lon}" data-name="${item.name.replace(/"/g,'&quot;')}">
-          ${shortLabel(item.name)}<span class="tiny">${item.name}</span>
-        </button>
-      </li>`).join("");
-    $("#results").querySelectorAll("button").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const lat = parseFloat(btn.dataset.lat);
-        const lon = parseFloat(btn.dataset.lon);
-        const name = btn.dataset.name;
-        update(lat, lon, shortLabel(name));
-        pushRecent({name, lat, lon});
-        renderRecent();
-        showToast(`地点を設定：${shortLabel(name)}`);
-      });
-    });
-  }catch(e){
-    $("#results").innerHTML = `<li class="muted tiny">検索に失敗しました。少し待って再度お試しください。</li>`;
-  }
-}
-
-/* =======================
-   GPS
-   ======================= */
-async function useGPS(){
-  if (!navigator.geolocation){
-    showToast("この端末では位置情報が使えません。公開URLでお試しを。");
-    return;
-  }
-  showToast("位置情報を取得中…");
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    const {latitude, longitude} = pos.coords;
-    const label = await reverseGeocode(latitude, longitude);
-    update(latitude.toFixed(4), longitude.toFixed(4), shortLabel(label));
-    pushRecent({name:label, lat:+latitude.toFixed(4), lon:+longitude.toFixed(4)});
-    renderRecent();
-  }, err=>{
-    showToast("位置情報が許可されませんでした。『地点を指定』から地名検索を使ってください。");
-  }, {enableHighAccuracy:true, timeout:8000, maximumAge:120000});
-}
-
-/* =======================
-   初期化
-   ======================= */
-function togglePicker(){
-  const p = $("#picker");
-  const open = p.style.display!=="none";
-  p.style.display = open ? "none" : "block";
-  $("#openPicker").setAttribute("aria-expanded", String(!open));
-  if (!open){ renderRecent(); }
-}
-
-const debouncedSearch = debounce(searchPlace, 400);
-
-$("#openPicker").addEventListener("click", togglePicker);
-$("#search").addEventListener("click", searchPlace);
-$("#place").addEventListener("keydown", (e)=>{ if(e.key==="Enter") searchPlace(); });
-$("#place").addEventListener("input", debouncedSearch);
-$("#refreshBtn").addEventListener("click", ()=>{ if (lastCoords) update(lastCoords.lat, lastCoords.lon, $("#where").textContent); });
-$("#useGps").addEventListener("click", useGPS);
-
-// 初回：最近地点があればそれを読み込む
-document.addEventListener("DOMContentLoaded", ()=>{
-  const arr = loadLS(CACHE_PREFIX+"recent") || [];
-  if (arr.length){
-    const p = arr[0];
-    update(p.lat, p.lon, shortLabel(p.name));
-  } else {
-    // 初回はユーザーに地点指定を促す（ローカルファイルだとGPSが拒否されやすいため）
-    togglePicker();
-  }
-});
+// 初期
+update(35.68,139.76,"東京周辺");
 </script>
 </body>
 </html>
