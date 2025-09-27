@@ -55,11 +55,20 @@
           border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
           padding:12px; border-radius:12px; display:none; z-index:4; }
   ul{ padding-left:18px; margin:8px 0 0; }
+
+  /* サジェスト行 */
+  #suggestions{ border-radius:10px; overflow:hidden; }
+  .suggest-item{ padding:10px; cursor:pointer;
+    border-bottom:1px solid color-mix(in oklab,var(--fg) 10%, transparent); }
+  .suggest-item:last-child{ border-bottom:none; }
+  .suggest-item:active{
+    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%);
+  }
 </style>
 
 <!-- cache buster -->
 <script>
-  const APP_VERSION = "1.2.2";
+  const APP_VERSION = "1.3.0"; // 公開のたびに上げる
   (function(){
     const url = new URL(location.href);
     if(url.searchParams.get("v") !== APP_VERSION){
@@ -168,18 +177,68 @@ async function cachedFetchJSON(url, ttlMs){
        const j = await r.json(); setCache(k,j,ttlMs); return j; }catch{ return {}; }
 }
 
-/* ===== geocoding (Open-Meteo → Nominatim fallback) ===== */
+/* ===== geocoding (Open-Meteo → Nominatim JP) ===== */
 async function geocode(q){
   if(!q || q.trim().length < 2) return [];
-  const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=5&language=ja&format=json`;
-  const j = await cachedFetchJSON(om, 60*60*1000);
-  if (j?.results?.length){
-    return j.results.map(r=>({name:[r.name,r.admin1,r.country].filter(Boolean).join(", "), lat:r.latitude, lon:r.longitude}));
-  }
-  const nom = `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`;
+
+  // 1) Open-Meteo（速い）
   try{
-    const n = await fetch(nom, {headers:{'Accept':'application/json','User-Agent':'AsthmaChecker/1.0'}}).then(r=>r.json());
-    return n.map(r=>({name:r.display_name, lat:+r.lat, lon:+r.lon}));
+    const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=ja&format=json`;
+    const j = await cachedFetchJSON(om, 60*60*1000);
+    if (j?.results?.length){
+      const mapped = j.results.map(r=>({
+        name: [r.name, r.admin1, r.country].filter(Boolean).join(", "),
+        lat:  r.latitude, lon: r.longitude,
+        score: (r.population? Math.log10(r.population)*2 : 0) + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
+      }));
+      const uniq = new Map();
+      mapped.sort((a,b)=>b.score-a.score).forEach(c=>{
+        if(!uniq.has(c.name)) uniq.set(c.name, c);
+      });
+      if(uniq.size) return [...uniq.values()];
+    }
+  }catch{}
+
+  // 2) Nominatim（日本限定・タイプ厳選・重複除去）
+  try{
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&countrycodes=jp&addressdetails=1&namedetails=1&q=${encodeURIComponent(q)}`;
+    const rows = await fetch(url, {
+      headers:{ 'Accept':'application/json', 'User-Agent':'AsthmaChecker/1.0 (edu)' }
+    }).then(r=>r.json());
+
+    const allowType = new Set([
+      'city','borough','suburb','quarter','neighbourhood',
+      'town','village','hamlet','ward','municipality',
+      'county','district',
+      'station','train_station','bus_station','subway_entrance'
+    ]);
+
+    const cand = rows.map(r=>{
+      const addr = r.address || {};
+      const pref = addr.state || addr.province || addr.region || "";
+      const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
+      const base = r.namedetails?.name || r.display_name?.split(',')[0] || q;
+
+      let s = (r.importance || 0) * 4;
+      const pop = Number(r.extratags?.population || 0);
+      if (pop) s += Math.log10(pop) * 2;
+      if (allowType.has(r.type)) s += 1.5;
+      if (/区$|市$|駅$/.test(base)) s += 0.8;
+      if (pref === '東京都') s += 0.3;
+
+      return {
+        name: [base, pref || city || "", "日本"].filter(Boolean).join(", "),
+        lat:+r.lat, lon:+r.lon, type:r.type, score:s
+      };
+    }).filter(c=> allowType.has(c.type) || /区$|市$|駅$/.test(c.name));
+
+    const uniq = new Map();
+    cand.sort((a,b)=>b.score-a.score).forEach(c=>{
+      const key = c.name.replace(/, 日本$/, "");
+      if(!uniq.has(key)) uniq.set(key, c);
+    });
+
+    return [...uniq.values()].slice(0,8);
   }catch{ return []; }
 }
 
@@ -347,10 +406,9 @@ $("#placeInput").addEventListener("input", async e=>{
   const box = $("#suggestions");
   if(q.length < 2){ box.innerHTML=""; return; }
   const list = await geocode(q);
-  box.innerHTML = list.map(r=>`
-    <div style="padding:8px;cursor:pointer;border-bottom:1px solid color-mix(in oklab,var(--fg) 10%, transparent);"
-         data-lat="${r.lat}" data-lon="${r.lon}">${r.name}</div>`).join("");
-  box.querySelectorAll("div").forEach(div=>div.addEventListener("click", ()=>{
+  if(!list.length){ box.innerHTML = `<div class="tiny muted">見つかりませんでした</div>`; return; }
+  box.innerHTML = list.map(r=>`<div class="suggest-item" data-lat="${r.lat}" data-lon="${r.lon}">${r.name}</div>`).join("");
+  box.querySelectorAll(".suggest-item").forEach(div=>div.addEventListener("click", ()=>{
     const lat=+div.dataset.lat, lon=+div.dataset.lon;
     update(lat,lon,div.textContent);
     $("#picker").style.display="none"; $("#openPicker").classList.remove("activeTab");
