@@ -177,39 +177,45 @@ async function cachedFetchJSON(url, ttlMs){
        const j = await r.json(); setCache(k,j,ttlMs); return j; }catch{ return {}; }
 }
 
-/* ===== geocoding (Open-Meteo → Nominatim JP) ===== */
+// geocode() 置き換え版：大阪府・新宿も確実に拾う
 async function geocode(q){
   if(!q || q.trim().length < 2) return [];
+  const term = q.trim();
+  const endsPref = /(都|道|府|県)$/.test(term);
+  const endsWard = /区$/.test(term);
 
-  // 1) Open-Meteo（速い）
+  // 1) Open-Meteo (速い)
   try{
-    const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=ja&format=json`;
+    const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=12&language=ja&format=json`;
     const j = await cachedFetchJSON(om, 60*60*1000);
     if (j?.results?.length){
       const mapped = j.results.map(r=>({
         name: [r.name, r.admin1, r.country].filter(Boolean).join(", "),
-        lat:  r.latitude, lon: r.longitude,
-        score: (r.population? Math.log10(r.population)*2 : 0) + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
+        lat: r.latitude, lon: r.longitude,
+        score: (r.population? Math.log10(r.population)*2 : 0)
+              + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
+              + (r.name===term ? 1.0 : 0)
       }));
       const uniq = new Map();
-      mapped.sort((a,b)=>b.score-a.score).forEach(c=>{
-        if(!uniq.has(c.name)) uniq.set(c.name, c);
-      });
-      if(uniq.size) return [...uniq.values()];
+      mapped.sort((a,b)=>b.score-a.score).forEach(c=>{ if(!uniq.has(c.name)) uniq.set(c.name,c); });
+      if(uniq.size) return [...uniq.values()].slice(0,8);
     }
   }catch{}
 
-  // 2) Nominatim（日本限定・タイプ厳選・重複除去）
+  // 2) Nominatim (日本限定)  — 種類を広めに許容しつつスコアで選別
   try{
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=12&countrycodes=jp&addressdetails=1&namedetails=1&q=${encodeURIComponent(q)}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=20&countrycodes=jp&addressdetails=1&namedetails=1&extratags=1&q=${encodeURIComponent(term)}`;
     const rows = await fetch(url, {
       headers:{ 'Accept':'application/json', 'User-Agent':'AsthmaChecker/1.0 (edu)' }
     }).then(r=>r.json());
 
+    // 許容タイプを広めに
     const allowType = new Set([
       'city','borough','suburb','quarter','neighbourhood',
       'town','village','hamlet','ward','municipality',
-      'county','district',
+      'county','district','city_district',
+      'state','province','region','administrative',
+      'locality','island',
       'station','train_station','bus_station','subway_entrance'
     ]);
 
@@ -217,21 +223,29 @@ async function geocode(q){
       const addr = r.address || {};
       const pref = addr.state || addr.province || addr.region || "";
       const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
-      const base = r.namedetails?.name || r.display_name?.split(',')[0] || q;
+      const base = r.namedetails?.name || r.display_name?.split(',')[0] || term;
+      const type = r.type || '';
+      const admin = Number(r.extratags?.admin_level || 0);
 
+      // スコア
       let s = (r.importance || 0) * 4;
       const pop = Number(r.extratags?.population || 0);
       if (pop) s += Math.log10(pop) * 2;
-      if (allowType.has(r.type)) s += 1.5;
-      if (/区$|市$|駅$/.test(base)) s += 0.8;
-      if (pref === '東京都') s += 0.3;
+      if (allowType.has(type)) s += 1.0;
+      if (base === term) s += 1.0;
+      if (endsPref && (type==='state' || type==='region' || type==='administrative' || admin===4)) s += 2.0; // 都道府県狙い
+      if (endsWard && (type==='ward' || type==='city_district' || admin===7)) s += 1.5; // 区狙い
+      if (/区$|市$|駅$/.test(base)) s += 0.5;
 
       return {
         name: [base, pref || city || "", "日本"].filter(Boolean).join(", "),
-        lat:+r.lat, lon:+r.lon, type:r.type, score:s
+        lat:+r.lat, lon:+r.lon, type, admin, score:s
       };
-    }).filter(c=> allowType.has(c.type) || /区$|市$|駅$/.test(c.name));
+    })
+    // 完全に無関係な小要素は軽く間引く（行政界/集落などは残す）
+    .filter(c => allowType.has(c.type));
 
+    // 重複除去（「名称, 都道府県」までをキー）
     const uniq = new Map();
     cand.sort((a,b)=>b.score-a.score).forEach(c=>{
       const key = c.name.replace(/, 日本$/, "");
@@ -239,8 +253,11 @@ async function geocode(q){
     });
 
     return [...uniq.values()].slice(0,8);
-  }catch{ return []; }
+  }catch{
+    return [];
+  }
 }
+
 
 /* ===== data fetch ===== */
 function pickIndex(times){
