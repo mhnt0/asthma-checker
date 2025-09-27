@@ -25,10 +25,21 @@
   .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
-  button{ font-size:16px; padding:10px 14px; border-radius:12px;
-          border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
-          background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); }
-  button:active{ transform:scale(0.98); }
+
+  /* ---------- ボタン（タップ視覚化） ---------- */
+  .btn{ font-size:16px; padding:10px 14px; border-radius:12px;
+        border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+        background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg);
+        position:relative; transition:transform .05s ease, opacity .15s ease; }
+  .btn:active{ transform:scale(0.98); }
+  .btn[aria-busy="true"]{ opacity:.7; pointer-events:none; }
+  .btn[aria-busy="true"]::before{
+    content:""; position:absolute; left:10px; top:50%; width:14px; height:14px; margin-top:-7px;
+    border-radius:50%; border:2px solid currentColor; border-right-color:transparent;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
   input{ padding:10px 12px; border-radius:10px; border:1px solid color-mix(in oklab,var(--fg) 15%, transparent);
          background:transparent; color:var(--fg); flex:1; }
   .muted{ color:var(--muted); font-size:13px; }
@@ -36,12 +47,16 @@
   .kpi{ display:flex; flex-direction:column; gap:4px; padding:10px; border-radius:12px;
         background:color-mix(in oklab,var(--card) 70%, var(--bg) 30%); }
   .kpi b{ font-size:18px; }
+
   .pill{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:13px; }
   .pill.low{ background:color-mix(in oklab, var(--ok) 25%, transparent); color: var(--ok);}
   .pill.mod{ background:color-mix(in oklab, var(--med) 25%, transparent); color:#a07b00;}
   .pill.high{ background:color-mix(in oklab, var(--hi) 25%, transparent); color:#a35300;}
   .pill.vhi{ background:color-mix(in oklab, var(--vhi) 25%, transparent); color:#8a0b0b;}
-  .gauge{ width:100%; aspect-ratio:2.2/1; }
+
+  /* ---------- ゲージの切れ対策 ---------- */
+  .gauge{ width:100%; aspect-ratio:2.2/1; overflow:visible; display:block; }
+
   .advice li{ margin:6px 0; }
   .tiny{ font-size:12px; }
   .toast{ position:fixed; left:12px; right:12px; bottom:16px; background:var(--card);
@@ -54,14 +69,26 @@
   .chip{ font-size:13px; padding:6px 10px; border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
          background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); margin:6px 6px 0 0; display:inline-block; }
 </style>
+
+<!-- 公開向け：自動キャッシュ更新（URLに ?v= を自動付与） -->
+<script>
+  const APP_VERSION = "1.1.0"; // ← 公開のたびに上げる（例: 1.1.1）
+  (function ensureVersionParam(){
+    const url = new URL(location.href);
+    const cur = url.searchParams.get("v");
+    if (cur === APP_VERSION) return;
+    url.searchParams.set("v", APP_VERSION);
+    location.replace(url.toString());
+  }());
+</script>
 </head>
 <body>
 <header class="row">
   <h1>喘息注意度チェッカー</h1>
   <div class="row" style="gap:6px;">
-    <button id="refreshBtn">更新</button>
-    <button id="useGps">現在地</button>
-    <button id="openPicker" aria-expanded="false" aria-controls="picker">地点を指定</button>
+    <button id="refreshBtn" class="btn">更新</button>
+    <button id="useGps" class="btn">現在地</button>
+    <button id="openPicker" class="btn" aria-expanded="false" aria-controls="picker">地点を指定</button>
   </div>
 </header>
 
@@ -80,13 +107,19 @@
         <div class="muted tiny">0 低 ←→ 100 高</div>
       </div>
     </div>
-    <svg class="gauge" viewBox="0 0 1000 450" aria-hidden="true">
+
+    <!-- viewBoxを広げ、strokeが切れない余白を確保 -->
+    <svg class="gauge" viewBox="-30 -30 1060 510" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
       <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
         <stop offset="0%" stop-color="#12b886"/><stop offset="33%" stop-color="#ffd43b"/>
         <stop offset="66%" stop-color="#ff922b"/><stop offset="100%" stop-color="#fa5252"/>
       </linearGradient></defs>
-      <path d="M80 360 A 420 420 0 0 1 920 360" stroke="rgba(128,128,128,.25)" stroke-width="44" fill="none" stroke-linecap="round"/>
-      <path id="arc" d="M80 360 A 420 420 0 0 1 80 360" stroke="url(#grad)" stroke-width="44" fill="none" stroke-linecap="round"/>
+      <!-- background arc -->
+      <path d="M80 360 A 420 420 0 0 1 920 360"
+            stroke="rgba(128,128,128,.25)" stroke-width="44" fill="none" stroke-linecap="round"/>
+      <!-- value arc -->
+      <path id="arc" d="M80 360 A 420 420 0 0 1 80 360"
+            stroke="url(#grad)" stroke-width="44" fill="none" stroke-linecap="round"/>
       <circle id="knob" cx="80" cy="360" r="14" fill="white" opacity=".9"/>
       <text id="labelMain" x="500" y="245" text-anchor="middle" font-size="42" font-weight="800"></text>
       <text id="labelSub" x="500" y="285" text-anchor="middle" font-size="24" opacity=".8"></text>
@@ -121,7 +154,7 @@
     <label class="tiny muted">地名・駅名・住所で検索（例：新座、練馬、札幌駅）</label>
     <div class="row">
       <input id="place" placeholder="地名を入力">
-      <button id="search">検索</button>
+      <button id="search" class="btn">検索</button>
     </div>
     <ul id="results" class="results"></ul>
     <div id="recentWrap" style="margin-top:10px; display:none;">
@@ -142,7 +175,15 @@ const KEY_PREFIX = "asthma:";
 const $ = s=>document.querySelector(s);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt = n => (n==null||Number.isNaN(n)) ? "--" : Math.round(n*10)/10;
-function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2400); }
+function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
+
+/* ボタンの“処理中”表示を簡単に扱う */
+function setBusy(btn, on=true, labelWhile){
+  if(!btn) return;
+  btn.setAttribute("aria-busy", on ? "true" : "false");
+  if(on && labelWhile){ btn.dataset.prev = btn.textContent; btn.textContent = labelWhile; }
+  if(!on && btn.dataset.prev){ btn.textContent = btn.dataset.prev; delete btn.dataset.prev; }
+}
 
 function kFetch(url){ return KEY_PREFIX+"fetch:"+url; }
 function getLS(k){ try{return JSON.parse(localStorage.getItem(k));}catch{return null;} }
@@ -192,29 +233,31 @@ function renderRecent(){
   wrap.style.display="block";
   box.innerHTML = arr.map(p=>`<button class="chip" data-lat="${p.lat}" data-lon="${p.lon}" data-name="${p.name}">${p.name}</button>`).join("");
   box.querySelectorAll("button").forEach(b=>{
-    b.addEventListener("click", ()=>{ update(+b.dataset.lat, +b.dataset.lon, b.dataset.name); showToast(`地点を設定：${b.dataset.name}`); });
+    b.addEventListener("click", async ()=>{
+      setBusy(b,true,"更新中");
+      await update(+b.dataset.lat, +b.dataset.lon, b.dataset.name);
+      setBusy(b,false);
+      showToast(`地点を設定：${b.dataset.name}`);
+    });
   });
 }
 
-/* ====== 現地時刻キー（TZ一致） ====== */
-function hourKeyInTZ(tz){
-  // "YYYY-MM-DD HH" をTZで作って "YYYY-MM-DDTHH" に
-  const s = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: tz, hour12: false,
-    year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit'
-  }).format(new Date()); // 例 "2025-09-28 07"
-  return s.replace(" ","T");
-}
-function closestIndex(arr, keyPrefix){
-  let idx = arr.findIndex(t=>t.startsWith(keyPrefix));
-  if (idx>=0) return idx;
-  // 近い時刻を使用（安全側で最新寄り）
-  const times = arr.map(t=>Date.parse(t+":00"));
-  const target = Date.parse(keyPrefix+":00");
-  let best=0, bestDiff=Infinity;
-  for(let i=0;i<times.length;i++){
-    const d = Math.abs(times[i]-target);
-    if(d<bestDiff){ best=i; bestDiff=d; }
+/* ====== 現地時刻のインデックスを安全に取得 ====== */
+function pickIndex(times){
+  if (!times || !times.length) return -1;
+  const ms = times.map(t => new Date(t.replace('T',' ') + ':00').getTime());
+  const nowLocal = Date.now();
+  // 現在時刻「以下」で最も近い。無ければ最も近い。
+  let best = -1, bestDiff = Infinity;
+  for (let i=0;i<ms.length;i++){
+    if (ms[i] <= nowLocal){
+      const d = nowLocal - ms[i];
+      if (d < bestDiff){ best = i; bestDiff = d; }
+    }
+  }
+  if (best === -1){
+    // すべて未来→最も近い未来
+    best = ms.reduce((bi,v,i)=> Math.abs(v-nowLocal) < Math.abs(ms[bi]-nowLocal) ? i : bi, 0);
   }
   return best;
 }
@@ -229,19 +272,14 @@ async function fetchAll(lat, lon){
   const pl = `https://pollen-api.open-meteo.com/v1/forecast?latitude=${latR}&longitude=${lonR}&hourly=grass_pollen,birch_pollen,ragweed_pollen&timezone=${tzEnc}`;
 
   const ttl = 10*60*1000; // 10分
-  const [aqJ, wxJ, plJ] = await Promise.all([
-    cachedFetchJSON(aq, ttl), cachedFetchJSON(wx, ttl), cachedFetchJSON(pl, ttl)
-  ]);
+  let aqJ={}, wxJ={}, plJ={};
+  try{ aqJ = await cachedFetchJSON(aq, ttl); }catch{}
+  try{ wxJ = await cachedFetchJSON(wx, ttl); }catch{}
+  try{ plJ = await cachedFetchJSON(pl, ttl); }catch{}
 
-  const hk = hourKeyInTZ(tz);
   const times = (aqJ?.hourly?.time || wxJ?.hourly?.time || []);
-  const idx = times.length ? closestIndex(times, hk) : -1;
-
-  function pick(o,k){
-    if(idx<0) return null;
-    const arr = o?.hourly?.[k] || [];
-    return (idx>=0 && idx<arr.length) ? arr[idx] : null;
-  }
+  const idx = pickIndex(times);
+  function pick(o,k){ if(idx<0) return null; const arr=o?.hourly?.[k]||[]; return (idx<arr.length)?arr[idx]:null; }
 
   const nextIdx = [idx+1, idx+2, idx+3].filter(i=>i>0 && i<(times?.length||0));
 
@@ -314,42 +352,39 @@ function setArc(score){
   $("#knob").setAttribute("cy",ey.toFixed(1));
 }
 async function update(lat, lon, label="この周辺"){
+  const pill=$("#levelPill");
   $("#where").textContent = label;
-  $("#levelPill").textContent = "計算中…"; $("#score").textContent="--";
+  pill.textContent = "計算中…"; $("#score").textContent="--";
   $("#labelMain").textContent=""; $("#labelSub").textContent="";
   $("#miniForecast").innerHTML=""; $("#adviceList").innerHTML="";
-  try{
-    const d = await fetchAll(+lat, +lon);
-    $("#pm25").textContent=fmt(d.pm25); $("#o3").textContent=fmt(d.o3);
-    $("#rh").textContent=fmt(d.rh); $("#t").textContent=fmt(d.t);
-    $("#wind").textContent=fmt(d.wind); $("#p").textContent=fmt(d.p);
-    $("#uv").textContent=fmt(d.uv);
-    const pol = (d.grass??d.birch??d.rag)==null ? "--" :
-      (Math.max(d.grass||0,d.birch||0,d.rag||0)<=10?"低":
-       Math.max(d.grass||0,d.birch||0,d.rag||0)<=50?"中":
-       Math.max(d.grass||0,d.birch||0,d.rag||0)<=150?"高":"非常に高");
-    $("#pollen").textContent = pol;
 
-    const score = computeScore(d);
-    const L = levelFromScore(score);
-    $("#score").textContent=score; $("#labelMain").textContent=L.label;
-    $("#labelSub").textContent=`総合スコア ${score}`;
-    $("#levelPill").className="pill "+L.cls; $("#levelPill").textContent=L.label;
-    setArc(score);
-    $("#updated").textContent=new Date().toTimeString().slice(0,5)+" 更新";
+  const d = await fetchAll(+lat, +lon);
+  $("#pm25").textContent=fmt(d.pm25); $("#o3").textContent=fmt(d.o3);
+  $("#rh").textContent=fmt(d.rh); $("#t").textContent=fmt(d.t);
+  $("#wind").textContent=fmt(d.wind); $("#p").textContent=fmt(d.p);
+  $("#uv").textContent=fmt(d.uv);
+  const pol = (d.grass??d.birch??d.rag)==null ? "--" :
+    (Math.max(d.grass||0,d.birch||0,d.rag||0)<=10?"低":
+     Math.max(d.grass||0,d.birch||0,d.rag||0)<=50?"中":
+     Math.max(d.grass||0,d.birch||0,d.rag||0)<=150?"高":"非常に高");
+  $("#pollen").textContent = pol;
 
-    $("#adviceList").innerHTML = buildAdvice(score,d).map(s=>`<li>${s}</li>`).join("");
-    $("#miniForecast").innerHTML = d.mini.map(m=>`
-      <div class="kpi">
-        <span class="tiny">${m.hh||"--:--"}</span>
-        <span class="tiny">PM2.5 ${fmt(m.pm25)} / O3 ${fmt(m.o3)}</span>
-        <span class="tiny">湿度 ${fmt(m.rh)}%・風 ${fmt(m.wind)}m/s</span>
-      </div>
-    `).join("");
-  }catch(e){
-    console.error(e);
-    showToast("データ取得に失敗しました。少し待って再試行してください。");
-  }
+  const score = computeScore(d);
+  const L = levelFromScore(score);
+  $("#score").textContent=score; $("#labelMain").textContent=L.label;
+  $("#labelSub").textContent=`総合スコア ${score}`;
+  pill.className="pill "+L.cls; pill.textContent=L.label;
+  setArc(score);
+  $("#updated").textContent=new Date().toTimeString().slice(0,5)+" 更新";
+
+  $("#adviceList").innerHTML = buildAdvice(score,d).map(s=>`<li>${s}</li>`).join("");
+  $("#miniForecast").innerHTML = d.mini.map(m=>`
+    <div class="kpi">
+      <span class="tiny">${m.hh||"--:--"}</span>
+      <span class="tiny">PM2.5 ${fmt(m.pm25)} / O3 ${fmt(m.o3)}</span>
+      <span class="tiny">湿度 ${fmt(m.rh)}%・風 ${fmt(m.wind)}m/s</span>
+    </div>
+  `).join("");
 }
 
 /* ====== 地名検索（Open-Meteo Geocoding） ====== */
@@ -363,27 +398,32 @@ async function geocode(q){
 const doSearch = debounce(async ()=>{
   const q=$("#place").value.trim(); const ul=$("#results");
   if(!q){ ul.innerHTML=""; return; }
+  setBusy($("#search"), true, "検索中…");
   ul.innerHTML = `<li class="muted tiny">検索中…</li>`;
   const list = await geocode(q);
-  if(!list.length){ ul.innerHTML=`<li class="muted tiny">見つかりませんでした</li>`; return; }
-  ul.innerHTML = list.map(it=>`<li><button data-lat="${it.lat}" data-lon="${it.lon}" data-name="${it.name}">${it.name}</button></li>`).join("");
+  if(!list.length){ ul.innerHTML=`<li class="muted tiny">見つかりませんでした</li>`; setBusy($("#search"),false); return; }
+  ul.innerHTML = list.map(it=>`<li><button class="btn" data-lat="${it.lat}" data-lon="${it.lon}" data-name="${it.name}">${it.name}</button></li>`).join("");
   ul.querySelectorAll("button").forEach(b=>{
-    b.addEventListener("click", ()=>{
-      update(+b.dataset.lat, +b.dataset.lon, b.dataset.name);
+    b.addEventListener("click", async ()=>{
+      setBusy(b,true,"設定中…");
+      await update(+b.dataset.lat, +b.dataset.lon, b.dataset.name);
       pushRecent({name:b.dataset.name, lat:+b.dataset.lat, lon:+b.dataset.lon});
       renderRecent();
+      setBusy(b,false);
       showToast(`地点を設定：${b.dataset.name}`);
     });
   });
+  setBusy($("#search"), false);
 }, 350);
 
 /* ====== GPS ====== */
 function useGPS(){
+  const btn=$("#useGps");
   if(!navigator.geolocation){ showToast("この端末では位置情報が使えません。"); return; }
-  showToast("位置情報を取得中…");
+  setBusy(btn,true,"取得中…"); showToast("位置情報を取得中…");
   navigator.geolocation.getCurrentPosition(
-    pos=>{ update(pos.coords.latitude, pos.coords.longitude, "現在地"); },
-    _=>{ showToast("位置情報が拒否されました。『地点を指定』から地名検索を使ってください。"); },
+    async pos=>{ await update(pos.coords.latitude, pos.coords.longitude, "現在地"); setBusy(btn,false); },
+    _=>{ showToast("位置情報が拒否されました。『地点を指定』から地名検索を使ってください。"); setBusy(btn,false); },
     {enableHighAccuracy:true, timeout:8000, maximumAge:120000}
   );
 }
@@ -395,18 +435,18 @@ function togglePicker(){
   $("#openPicker").setAttribute("aria-expanded", String(!open));
   if(!open) renderRecent();
 }
-$("#openPicker").addEventListener("click", togglePicker);
+$("#openPicker").addEventListener("click", ()=>{ setBusy($("#openPicker"), true, "開く…"); togglePicker(); setBusy($("#openPicker"), false); });
 $("#search").addEventListener("click", ()=>doSearch());
 $("#place").addEventListener("input", ()=>doSearch());
 $("#place").addEventListener("keydown", e=>{ if(e.key==="Enter") doSearch(); });
 $("#useGps").addEventListener("click", useGPS);
-$("#refreshBtn").addEventListener("click", ()=>{ showToast("最新の値に更新します"); update(currentLat, currentLon, $("#where").textContent || "この周辺"); });
-
 let currentLat = 35.68, currentLon = 139.76; // 初期：東京
 const _origUpdate = update;
 update = async (lat, lon, label)=>{
   currentLat = +lat; currentLon = +lon;
-  return _origUpdate(lat, lon, label);
+  setBusy($("#refreshBtn"), true, "更新中…");
+  try{ return await _origUpdate(lat, lon, label); }
+  finally{ setBusy($("#refreshBtn"), false); }
 };
 update(currentLat, currentLon, "東京周辺");
 </script>
