@@ -47,7 +47,7 @@
   .pill.high{ background:color-mix(in oklab, var(--hi) 25%, transparent); color:#a35300;}
   .pill.vhi{ background:color-mix(in oklab, var(--vhi) 25%, transparent); color:#8a0b0b;}
 
-  /* Gauge: prevent clipping */
+  /* Gauge */
   .gauge{ width:100%; aspect-ratio:2.2/1; overflow:visible; display:block; }
 
   .tiny{ font-size:12px; }
@@ -56,19 +56,17 @@
           padding:12px; border-radius:12px; display:none; z-index:4; }
   ul{ padding-left:18px; margin:8px 0 0; }
 
-  /* サジェスト行 */
+  /* サジェスト */
   #suggestions{ border-radius:10px; overflow:hidden; }
   .suggest-item{ padding:10px; cursor:pointer;
     border-bottom:1px solid color-mix(in oklab,var(--fg) 10%, transparent); }
   .suggest-item:last-child{ border-bottom:none; }
-  .suggest-item:active{
-    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%);
-  }
+  .suggest-item:active{ background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); }
 </style>
 
 <!-- cache buster -->
 <script>
-  const APP_VERSION = "1.3.0"; // 公開のたびに上げる
+  const APP_VERSION = "1.4.0"; // 公開のたびに上げる
   (function(){
     const url = new URL(location.href);
     if(url.searchParams.get("v") !== APP_VERSION){
@@ -150,7 +148,7 @@
       <button id="openPicker">地点を指定</button>
     </div>
     <div id="picker" style="display:none; margin-top:10px;">
-      <label class="tiny muted">地名・駅名で検索（例：大阪、札幌、新宿）</label>
+      <label class="tiny muted">地名・駅名で検索（例：大阪、大阪府、札幌、新宿、新宿区、渋谷、梅田）</label>
       <input id="placeInput" placeholder="地名を入力" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;">
       <div id="suggestions" style="margin-top:6px;"></div>
     </div>
@@ -166,6 +164,7 @@ const $ = s => document.querySelector(s);
 const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
 const fmt = n => (n==null||Number.isNaN(n)) ? "--" : Math.round(n*10)/10;
 function showToast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block"; setTimeout(()=>t.style.display="none",2200); }
+function normalizeQuery(q){ return (q||"").replace(/\u3000/g," ").trim(); }
 
 /* ===== tiny cache ===== */
 function cacheKey(ns,obj){ return ns+":"+JSON.stringify(obj); }
@@ -177,39 +176,77 @@ async function cachedFetchJSON(url, ttlMs){
        const j = await r.json(); setCache(k,j,ttlMs); return j; }catch{ return {}; }
 }
 
-// geocode() 置き換え版：大阪府・新宿も確実に拾う
-async function geocode(q){
-  if(!q || q.trim().length < 2) return [];
-  const term = q.trim();
-  const endsPref = /(都|道|府|県)$/.test(term);
-  const endsWard = /区$/.test(term);
+/* ===== popularity heuristics (だいたい) ===== */
+const POP_CITY = new Map(Object.entries({
+  "東京":4,"東京都":3.5,"大阪":4,"大阪市":3.8,"大阪府":3.5,"札幌":3.6,"札幌市":3.6,"京都":3.4,"名古屋":3.4,"横浜":3.5,
+  "福岡":3.3,"神戸":3.2,"広島":3.0,"仙台":3.0,"那覇":2.8,"川崎":2.8,"千葉":2.6,"さいたま":2.6,"金沢":2.4
+}));
+const POP_HOTSPOT = new Map(Object.entries({
+  "新宿":3.6,"新宿区":3.8,"渋谷":3.5,"池袋":3.3,"上野":2.6,"品川":2.4,"秋葉原":2.6,"銀座":2.6,
+  "梅田":3.2,"難波":3.0,"心斎橋":2.8,"天王寺":2.6,"日本橋":2.2,"博多":3.0
+}));
+const PREF_CAPITAL = new Map(Object.entries({
+  "札幌市":1.0,"仙台市":0.8,"さいたま市":0.8,"千葉市":0.7,"横浜市":1.0,"新潟市":0.6,"金沢市":0.6,"名古屋市":1.0,
+  "京都市":1.0,"大阪市":1.0,"神戸市":1.0,"岡山市":0.6,"広島市":0.9,"高松市":0.5,"福岡市":1.0,"鹿児島市":0.5,"那覇市":0.7
+}));
+function popularityBoost(base, pref, type){
+  let s = 0;
+  // よく使う短い名称・繁華街ワード
+  s += POP_HOTSPOT.get(base) || 0;
+  // 大都市・都道府県名
+  s += POP_CITY.get(base) || 0;
+  if (/都$|道$|府$|県$/.test(base)) s += 1.0;
+  // 駅は強め
+  if (/駅$/.test(base) || /station/.test(type)) s += 1.2;
+  // 市区
+  if (/市$|区$/.test(base)) s += 0.6;
+  // 県庁所在地（名称が一致）
+  s += PREF_CAPITAL.get(base) || 0;
+  // 県名＋主要都市並び
+  if ((pref||"").includes("東京都") && /新宿|渋谷|池袋|品川|銀座/.test(base)) s += 0.6;
+  if ((pref||"").includes("大阪府") && /梅田|難波|心斎橋|天王寺|新大阪/.test(base)) s += 0.6;
+  return s;
+}
 
-  // 1) Open-Meteo (速い)
-  try{
-    const om = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=12&language=ja&format=json`;
-    const j = await cachedFetchJSON(om, 60*60*1000);
-    if (j?.results?.length){
-      const mapped = j.results.map(r=>({
-        name: [r.name, r.admin1, r.country].filter(Boolean).join(", "),
-        lat: r.latitude, lon: r.longitude,
-        score: (r.population? Math.log10(r.population)*2 : 0)
-              + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
-              + (r.name===term ? 1.0 : 0)
-      }));
-      const uniq = new Map();
-      mapped.sort((a,b)=>b.score-a.score).forEach(c=>{ if(!uniq.has(c.name)) uniq.set(c.name,c); });
-      if(uniq.size) return [...uniq.values()].slice(0,8);
-    }
-  }catch{}
+/* ===== geocoding with popularity sort ===== */
+async function fetchJSONTimeout(url, {timeout=4000, headers={}}={}){
+  const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), timeout);
+  try{ const res = await fetch(url, {signal:ctrl.signal, headers}); if(!res.ok) throw 0; return await res.json(); }
+  finally{ clearTimeout(id); }
+}
+function dedupeByNamePref(rows){
+  const m=new Map(); rows.forEach(r=>{ const key=r.name.replace(/, 日本$/, ""); if(!m.has(key)) m.set(key,r); }); return [...m.values()];
+}
+async function geocode(raw){
+  const term = normalizeQuery(raw);
+  if(term.length < 2) return [];
 
-  // 2) Nominatim (日本限定)  — 種類を広めに許容しつつスコアで選別
-  try{
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=20&countrycodes=jp&addressdetails=1&namedetails=1&extratags=1&q=${encodeURIComponent(term)}`;
-    const rows = await fetch(url, {
-      headers:{ 'Accept':'application/json', 'User-Agent':'AsthmaChecker/1.0 (edu)' }
-    }).then(r=>r.json());
+  const endsPref = /(都|道|府|県)$/u.test(term);
+  const endsWard = /区$/u.test(term);
 
-    // 許容タイプを広めに
+  // 並列検索
+  const omURL = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=12&language=ja&format=json`;
+  const nomURL = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=20&countrycodes=jp&addressdetails=1&namedetails=1&extratags=1&q=${encodeURIComponent(term)}`;
+  const [omRes, nomRes] = await Promise.allSettled([
+    fetchJSONTimeout(omURL,{timeout:3500}),
+    fetchJSONTimeout(nomURL,{timeout:4000,headers:{'Accept':'application/json','User-Agent':'AsthmaChecker/1.0 (edu)'}})
+  ]);
+
+  let cand = [];
+
+  if (omRes.status==="fulfilled" && omRes.value?.results?.length){
+    cand.push(...omRes.value.results.map(r=>{
+      const base = r.name;
+      const pref = r.admin1 || "";
+      let s = (r.population? Math.log10(r.population)*2 : 0)
+            + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
+            + (base===term ? 1.0 : 0)
+            + popularityBoost(base, pref, "place");
+      return {name:[base,pref,r.country].filter(Boolean).join(", "),lat:r.latitude,lon:r.longitude,score:s};
+    }));
+  }
+
+  if (nomRes.status==="fulfilled" && Array.isArray(nomRes.value)){
     const allowType = new Set([
       'city','borough','suburb','quarter','neighbourhood',
       'town','village','hamlet','ward','municipality',
@@ -218,46 +255,33 @@ async function geocode(q){
       'locality','island',
       'station','train_station','bus_station','subway_entrance'
     ]);
-
-    const cand = rows.map(r=>{
-      const addr = r.address || {};
+    cand.push(...nomRes.value.map(r=>{
+      const addr=r.address||{};
       const pref = addr.state || addr.province || addr.region || "";
       const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
       const base = r.namedetails?.name || r.display_name?.split(',')[0] || term;
-      const type = r.type || '';
-      const admin = Number(r.extratags?.admin_level || 0);
+      const type = r.type || ''; const admin = Number(r.extratags?.admin_level || 0);
 
-      // スコア
-      let s = (r.importance || 0) * 4;
+      let s = (r.importance||0)*4
+            + popularityBoost(base, pref, type);
       const pop = Number(r.extratags?.population || 0);
       if (pop) s += Math.log10(pop) * 2;
-      if (allowType.has(type)) s += 1.0;
-      if (base === term) s += 1.0;
-      if (endsPref && (type==='state' || type==='region' || type==='administrative' || admin===4)) s += 2.0; // 都道府県狙い
-      if (endsWard && (type==='ward' || type==='city_district' || admin===7)) s += 1.5; // 区狙い
-      if (/区$|市$|駅$/.test(base)) s += 0.5;
+      if (/駅$/.test(base)) s += 0.8;
+      if (base===term) s += 1.0;
+      if (endsPref && (type==='state'||type==='region'||type==='administrative'||admin===4)) s += 2.0;
+      if (endsWard && (type==='ward'||type==='city_district'||admin===7)) s += 1.2;
 
-      return {
-        name: [base, pref || city || "", "日本"].filter(Boolean).join(", "),
-        lat:+r.lat, lon:+r.lon, type, admin, score:s
-      };
-    })
-    // 完全に無関係な小要素は軽く間引く（行政界/集落などは残す）
-    .filter(c => allowType.has(c.type));
-
-    // 重複除去（「名称, 都道府県」までをキー）
-    const uniq = new Map();
-    cand.sort((a,b)=>b.score-a.score).forEach(c=>{
-      const key = c.name.replace(/, 日本$/, "");
-      if(!uniq.has(key)) uniq.set(key, c);
-    });
-
-    return [...uniq.values()].slice(0,8);
-  }catch{
-    return [];
+      return {name:[base, pref||city||"", "日本"].filter(Boolean).join(", "), lat:+r.lat, lon:+r.lon, score:s, keep:allowType.has(type)};
+    }).filter(x=>x.keep));
   }
-}
 
+  cand = dedupeByNamePref(cand).sort((a,b)=>b.score-a.score);
+  if(!cand.length){
+    const alt = /(区|市|町|村|駅)$/u.test(term) ? term : (term + "");
+    if (alt!==term) return await geocode(alt);
+  }
+  return cand.slice(0,8);
+}
 
 /* ===== data fetch ===== */
 function pickIndex(times){
@@ -276,7 +300,6 @@ function pickIndex(times){
   }
   return best;
 }
-
 async function fetchAll(lat, lon){
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tokyo";
   const tzEnc = encodeURIComponent(tz);
@@ -344,10 +367,10 @@ function buildAdvice(s,d){
   return a;
 }
 
-/* ===== gauge drawing (unified) ===== */
+/* ===== gauge drawing ===== */
 function setArc(score){
   const pct = clamp(score,0,100) / 100;
-  const R=440, cx=550, cy=500;      // must match SVG
+  const R=440, cx=550, cy=500;
   const ex = cx + R*Math.cos(Math.PI - Math.PI*pct);
   const ey = cy - R*Math.sin(Math.PI - Math.PI*pct);
   $("#arc").setAttribute("d", `M110 500 A 440 440 0 0 1 ${ex.toFixed(1)} ${ey.toFixed(1)}`);
@@ -408,6 +431,36 @@ async function useGPS(){
   );
 }
 
+/* ===== search input: debounce + latest-only render ===== */
+let qTimer = null, lastReqId = 0;
+$("#placeInput").addEventListener("input", e=>{
+  const box = $("#suggestions");
+  const raw = e.target.value;
+  if (qTimer) clearTimeout(qTimer);
+
+  qTimer = setTimeout(async ()=>{
+    const reqId = ++lastReqId;
+    const q = normalizeQuery(raw);
+    if (q.length < 2){ if(reqId===lastReqId) box.innerHTML=""; return; }
+
+    box.innerHTML = `<div class="tiny muted">検索中…</div>`;
+    const list = await geocode(q);
+
+    if (reqId !== lastReqId) return; // 最新のみ描画
+
+    if(!list.length){
+      box.innerHTML = `<div class="tiny muted">見つかりませんでした</div>`;
+      return;
+    }
+    box.innerHTML = list.map(r=>`<div class="suggest-item" data-lat="${r.lat}" data-lon="${r.lon}">${r.name}</div>`).join("");
+    box.querySelectorAll(".suggest-item").forEach(div=>div.addEventListener("click", ()=>{
+      const lat=+div.dataset.lat, lon=+div.dataset.lon;
+      update(lat,lon,div.textContent);
+      $("#picker").style.display="none"; $("#openPicker").classList.remove("activeTab");
+    }));
+  }, 300);
+});
+
 /* ===== UI wiring ===== */
 $("#refreshBtn").addEventListener("click", ()=>{ useGPS(); });
 $("#useGps").addEventListener("click", useGPS);
@@ -416,20 +469,6 @@ $("#openPicker").addEventListener("click", ()=>{
   const open = p.style.display !== "none";
   p.style.display = open ? "none" : "block";
   b.classList.toggle("activeTab", !open);
-});
-
-$("#placeInput").addEventListener("input", async e=>{
-  const q = e.target.value.trim();
-  const box = $("#suggestions");
-  if(q.length < 2){ box.innerHTML=""; return; }
-  const list = await geocode(q);
-  if(!list.length){ box.innerHTML = `<div class="tiny muted">見つかりませんでした</div>`; return; }
-  box.innerHTML = list.map(r=>`<div class="suggest-item" data-lat="${r.lat}" data-lon="${r.lon}">${r.name}</div>`).join("");
-  box.querySelectorAll(".suggest-item").forEach(div=>div.addEventListener("click", ()=>{
-    const lat=+div.dataset.lat, lon=+div.dataset.lon;
-    update(lat,lon,div.textContent);
-    $("#picker").style.display="none"; $("#openPicker").classList.remove("activeTab");
-  }));
 });
 
 /* ===== init ===== */
