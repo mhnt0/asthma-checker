@@ -26,31 +26,26 @@
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
 
-/* ===== Footer ===== */
-footer.site-footer{
-  margin:28px auto 12px;
-  max-width:720px;
-  padding:14px 12px;
-  background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%);
-  border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
-  border-radius:14px;
-}
-.footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-.footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
-.footer-chip{
-  display:inline-flex; align-items:center; justify-content:center;
-  padding:10px 14px; min-height:44px;            /* タップ領域 44px以上 */
-  border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
-  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%);
-  color:var(--fg); text-decoration:none; font-size:14px;
-}
-.footer-chip:active{ transform:scale(.98); }
-.footer-sep{ height:1px; width:100%; margin:8px 0;
-  background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+  /* ===== Footer ===== */
+  footer.site-footer{
+    margin:28px auto 12px; max-width:720px; padding:14px 12px;
+    background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%);
+    border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px;
+  }
+  .footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
+  .footer-chip{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:10px 14px; min-height:44px; border-radius:999px;
+    border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg);
+    text-decoration:none; font-size:14px;
+  }
+  .footer-chip:active{ transform:scale(.98); }
+  .footer-sep{ height:1px; width:100%; margin:8px 0;
+    background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+  .footer-chip.legal{ color:var(--muted); background:transparent; }
 
-/* 法務リンクは控えめに（でも押しやすいサイズ維持） */
-.footer-chip.legal{ color:var(--muted); background:transparent; }
-  
   /* Buttons */
   button{ font-size:16px; padding:12px 14px; border-radius:12px;
           border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
@@ -91,7 +86,7 @@ footer.site-footer{
 
 <!-- cache buster -->
 <script>
-  const APP_VERSION = "1.4.0"; // 公開のたびに上げる
+  const APP_VERSION = "1.5.0"; // 公開のたびに上げる
   (function(){
     const url = new URL(location.href);
     if(url.searchParams.get("v") !== APP_VERSION){
@@ -141,7 +136,7 @@ footer.site-footer{
       <text id="labelMain" x="550" y="285" text-anchor="middle" font-size="42" font-weight="800"></text>
       <text id="labelSub"  x="550" y="330" text-anchor="middle" font-size="22" opacity=".8"></text>
     </svg>
-    <div class="muted tiny">データ: Open-Meteo（気象/大気/花粉）・地名検索: Open-Meteo + OSM</div>
+    <div class="muted tiny">データ: Open-Meteo（気象/大気/花粉）・地名検索: ローカル辞書 + Open-Meteo + OSM</div>
   </section>
 
   <section class="card">
@@ -173,7 +168,7 @@ footer.site-footer{
       <button id="openPicker">地点を指定</button>
     </div>
     <div id="picker" style="display:none; margin-top:10px;">
-      <label class="tiny muted">地名・駅名で検索（例：大阪、大阪府、札幌、新宿、新宿区、渋谷、梅田）</label>
+      <label class="tiny muted">地名・駅名で検索（例：大阪、札幌、新宿、梅田、なんば、天神 など）</label>
       <input id="placeInput" placeholder="地名を入力" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;">
       <div id="suggestions" style="margin-top:6px;"></div>
     </div>
@@ -189,9 +184,7 @@ footer.site-footer{
     <a class="footer-chip" href="uv-ozone.html">オゾンと健康</a>
     <a class="footer-chip" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="ページ先頭へ">先頭へ戻る</a>
   </nav>
-
   <hr class="footer-sep" />
-
   <p class="footer-title">運営・ポリシー</p>
   <nav class="footer-row" aria-label="ポリシーリンク">
     <a class="footer-chip legal" href="privacy.html">プライバシーポリシー</a>
@@ -199,7 +192,7 @@ footer.site-footer{
     <a class="footer-chip legal" href="terms.html">利用規約</a>
   </nav>
 </footer>
-  
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -227,7 +220,7 @@ const POP_CITY = new Map(Object.entries({
 }));
 const POP_HOTSPOT = new Map(Object.entries({
   "新宿":3.6,"新宿区":3.8,"渋谷":3.5,"池袋":3.3,"上野":2.6,"品川":2.4,"秋葉原":2.6,"銀座":2.6,
-  "梅田":3.2,"難波":3.0,"心斎橋":2.8,"天王寺":2.6,"日本橋":2.2,"博多":3.0
+  "梅田":3.2,"難波":3.0,"心斎橋":2.8,"天王寺":2.6,"日本橋":2.2,"博多":3.0,"天神":3.2,"すすきの":3.0
 }));
 const PREF_CAPITAL = new Map(Object.entries({
   "札幌市":1.0,"仙台市":0.8,"さいたま市":0.8,"千葉市":0.7,"横浜市":1.0,"新潟市":0.6,"金沢市":0.6,"名古屋市":1.0,
@@ -235,42 +228,119 @@ const PREF_CAPITAL = new Map(Object.entries({
 }));
 function popularityBoost(base, pref, type){
   let s = 0;
-  // よく使う短い名称・繁華街ワード
   s += POP_HOTSPOT.get(base) || 0;
-  // 大都市・都道府県名
   s += POP_CITY.get(base) || 0;
   if (/都$|道$|府$|県$/.test(base)) s += 1.0;
-  // 駅は強め
   if (/駅$/.test(base) || /station/.test(type)) s += 1.2;
-  // 市区
   if (/市$|区$/.test(base)) s += 0.6;
-  // 県庁所在地（名称が一致）
   s += PREF_CAPITAL.get(base) || 0;
-  // 県名＋主要都市並び
   if ((pref||"").includes("東京都") && /新宿|渋谷|池袋|品川|銀座/.test(base)) s += 0.6;
   if ((pref||"").includes("大阪府") && /梅田|難波|心斎橋|天王寺|新大阪/.test(base)) s += 0.6;
   return s;
 }
 
-/* ===== geocoding with popularity sort ===== */
+/* ===== local prefecture & capital quick DB (+ 繁華街) ===== */
+const _zen2han = s => s.replace(/[！-～]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
+const _stripSuffix = s => s.replace(/(都|道|府|県|市|区|町|村|郡|駅|市区|市町村)$/u, "");
+const _norm = s => _stripSuffix(_zen2han((s||"").trim()));
+const LOCAL_PLACES = [
+  {aliases:["北海道","札幌","札幌市"],lat:43.0621,lon:141.3544},
+  {aliases:["青森県","青森","青森市"],lat:40.8222,lon:140.7474},
+  {aliases:["岩手県","盛岡","盛岡市"],lat:39.7019,lon:141.1540},
+  {aliases:["宮城県","仙台","仙台市","仙台駅"],lat:38.2682,lon:140.8694},
+  {aliases:["秋田県","秋田","秋田市"],lat:39.7186,lon:140.1024},
+  {aliases:["山形県","山形","山形市"],lat:38.2404,lon:140.3633},
+  {aliases:["福島県","福島","福島市"],lat:37.7503,lon:140.4676},
+  {aliases:["茨城県","水戸","水戸市"],lat:36.3659,lon:140.4712},
+  {aliases:["栃木県","宇都宮","宇都宮市"],lat:36.5551,lon:139.8828},
+  {aliases:["群馬県","前橋","前橋市"],lat:36.3890,lon:139.0600},
+  {aliases:["埼玉県","さいたま","さいたま市"],lat:35.8617,lon:139.6455},
+  {aliases:["千葉県","千葉","千葉市"],lat:35.6073,lon:140.1063},
+  {aliases:["東京都","東京","東京23区","都内","東京駅","丸の内"],lat:35.6828,lon:139.7595},
+  {aliases:["神奈川県","横浜","横浜市","横浜駅","みなとみらい"],lat:35.4658,lon:139.6225},
+  {aliases:["新潟県","新潟","新潟市"],lat:37.9161,lon:139.0364},
+  {aliases:["富山県","富山","富山市"],lat:36.6953,lon:137.2113},
+  {aliases:["石川県","金沢","金沢市"],lat:36.5613,lon:136.6562},
+  {aliases:["福井県","福井","福井市"],lat:36.0652,lon:136.2216},
+  {aliases:["山梨県","甲府","甲府市"],lat:35.6642,lon:138.5684},
+  {aliases:["長野県","長野","長野市"],lat:36.6513,lon:138.1810},
+  {aliases:["岐阜県","岐阜","岐阜市"],lat:35.4233,lon:136.7607},
+  {aliases:["静岡県","静岡","静岡市"],lat:34.9756,lon:138.3828},
+  {aliases:["愛知県","名古屋","名古屋市","名古屋駅","名駅","栄","栄町（名古屋）","金山"],lat:35.1815,lon:136.9066},
+  {aliases:["三重県","津","津市"],lat:34.7303,lon:136.5086},
+  {aliases:["滋賀県","大津","大津市"],lat:35.0045,lon:135.8686},
+  {aliases:["京都府","京都","京都市","河原町","四条"],lat:35.0116,lon:135.7681},
+  {aliases:["大阪府","大阪","大阪市","梅田","大阪駅","なんば","難波","心斎橋","天王寺","新大阪","日本橋（大阪）"],lat:34.6937,lon:135.5023},
+  {aliases:["兵庫県","神戸","神戸市","三宮","神戸三宮"],lat:34.6952,lon:135.1979},
+  {aliases:["奈良県","奈良","奈良市"],lat:34.6851,lon:135.8050},
+  {aliases:["和歌山県","和歌山","和歌山市"],lat:34.2305,lon:135.1708},
+  {aliases:["鳥取県","鳥取","鳥取市"],lat:35.5011,lon:134.2351},
+  {aliases:["島根県","松江","松江市"],lat:35.4723,lon:133.0505},
+  {aliases:["岡山県","岡山","岡山市"],lat:34.6551,lon:133.9195},
+  {aliases:["広島県","広島","広島市"],lat:34.3853,lon:132.4553},
+  {aliases:["山口県","山口","山口市"],lat:34.1859,lon:131.4706},
+  {aliases:["徳島県","徳島","徳島市"],lat:34.0703,lon:134.5548},
+  {aliases:["香川県","高松","高松市"],lat:34.3428,lon:134.0466},
+  {aliases:["愛媛県","松山","松山市"],lat:33.8392,lon:132.7657},
+  {aliases:["高知県","高知","高知市"],lat:33.5597,lon:133.5311},
+  {aliases:["福岡県","福岡","福岡市","天神","中洲","博多駅"],lat:33.5902,lon:130.4017},
+  {aliases:["佐賀県","佐賀","佐賀市"],lat:33.2635,lon:130.3009},
+  {aliases:["長崎県","長崎","長崎市"],lat:32.7503,lon:129.8777},
+  {aliases:["熊本県","熊本","熊本市"],lat:32.7898,lon:130.7417},
+  {aliases:["大分県","大分","大分市"],lat:33.2396,lon:131.6093},
+  {aliases:["宮崎県","宮崎","宮崎市"],lat:31.9111,lon:131.4239},
+  {aliases:["鹿児島県","鹿児島","鹿児島市"],lat:31.5966,lon:130.5571},
+  {aliases:["沖縄県","那覇","那覇市","国際通り"],lat:26.2124,lon:127.6809},
+  // 東京繁華街
+  {aliases:["新宿","新宿区","新宿駅"],lat:35.6938,lon:139.7034},
+  {aliases:["渋谷","渋谷区","渋谷駅"],lat:35.6595,lon:139.7005},
+  {aliases:["池袋","池袋駅"],lat:35.7295,lon:139.7100},
+  {aliases:["品川","品川駅"],lat:35.6285,lon:139.7389},
+  {aliases:["銀座"],lat:35.6717,lon:139.7650},
+  {aliases:["上野","上野駅"],lat:35.7138,lon:139.7773},
+  {aliases:["秋葉原"],lat:35.6984,lon:139.7730},
+  // 札幌繁華街
+  {aliases:["すすきの","大通","札幌駅"],lat:43.0554,lon:141.3400},
+];
+function localCandidates(raw){
+  const q = _norm(raw);
+  if (!q || q.length < 1) return [];
+  const res = [];
+  for (const it of LOCAL_PLACES){
+    for (const al of it.aliases){
+      const a = _norm(al);
+      if (q === a || a.startsWith(q) || q.startsWith(a) || a.includes(q)){
+        const title = `${al.replace(/市$/,"")}, 日本`;
+        const boost = /都|道|府|県$/.test(al) ? 140 : 130;
+        res.push({name:title,lat:it.lat,lon:it.lon,score:boost});
+        break;
+      }
+    }
+  }
+  const seen=new Set(), out=[];
+  for(const r of res){ if(!seen.has(r.name)){ seen.add(r.name); out.push(r);} }
+  out.sort((a,b)=>b.score-a.score);
+  return out.slice(0,8);
+}
+
+/* ===== geocoding with local-first + popularity sort ===== */
 async function fetchJSONTimeout(url, {timeout=4000, headers={}}={}){
   const ctrl = new AbortController(); const id = setTimeout(()=>ctrl.abort(), timeout);
   try{ const res = await fetch(url, {signal:ctrl.signal, headers}); if(!res.ok) throw 0; return await res.json(); }
   finally{ clearTimeout(id); }
 }
-function dedupeByNamePref(rows){
-  const m=new Map(); rows.forEach(r=>{ const key=r.name.replace(/, 日本$/, ""); if(!m.has(key)) m.set(key,r); }); return [...m.values()];
-}
 async function geocode(raw){
   const term = normalizeQuery(raw);
-  if(term.length < 2) return [];
+  if (term.length < 1) return [];
 
-  const endsPref = /(都|道|府|県)$/u.test(term);
-  const endsWard = /区$/u.test(term);
+  // 1) ローカル辞書で即時候補
+  const local = localCandidates(term);
+  if (local.length) return local;
 
-  // 並列検索
-  const omURL = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=12&language=ja&format=json`;
+  // 2) オンライン検索
+  const omURL  = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=12&language=ja&format=json`;
   const nomURL = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=20&countrycodes=jp&addressdetails=1&namedetails=1&extratags=1&q=${encodeURIComponent(term)}`;
+
   const [omRes, nomRes] = await Promise.allSettled([
     fetchJSONTimeout(omURL,{timeout:3500}),
     fetchJSONTimeout(nomURL,{timeout:4000,headers:{'Accept':'application/json','User-Agent':'AsthmaChecker/1.0 (edu)'}})
@@ -280,8 +350,7 @@ async function geocode(raw){
 
   if (omRes.status==="fulfilled" && omRes.value?.results?.length){
     cand.push(...omRes.value.results.map(r=>{
-      const base = r.name;
-      const pref = r.admin1 || "";
+      const base = r.name; const pref = r.admin1 || "";
       let s = (r.population? Math.log10(r.population)*2 : 0)
             + (r.feature_code?.startsWith("PPL")? 1.0 : 0)
             + (base===term ? 1.0 : 0)
@@ -305,25 +374,29 @@ async function geocode(raw){
       const city = addr.city || addr.town || addr.village || addr.municipality || addr.county || "";
       const base = r.namedetails?.name || r.display_name?.split(',')[0] || term;
       const type = r.type || ''; const admin = Number(r.extratags?.admin_level || 0);
-
-      let s = (r.importance||0)*4
-            + popularityBoost(base, pref, type);
+      let s = (r.importance||0)*4 + popularityBoost(base, pref, type);
       const pop = Number(r.extratags?.population || 0);
       if (pop) s += Math.log10(pop) * 2;
       if (/駅$/.test(base)) s += 0.8;
       if (base===term) s += 1.0;
-      if (endsPref && (type==='state'||type==='region'||type==='administrative'||admin===4)) s += 2.0;
-      if (endsWard && (type==='ward'||type==='city_district'||admin===7)) s += 1.2;
-
+      if (/(state|region|administrative)/.test(type) || admin===4) if (/(都|道|府|県)$/.test(term)) s += 2.0;
       return {name:[base, pref||city||"", "日本"].filter(Boolean).join(", "), lat:+r.lat, lon:+r.lon, score:s, keep:allowType.has(type)};
     }).filter(x=>x.keep));
   }
 
-  cand = dedupeByNamePref(cand).sort((a,b)=>b.score-a.score);
-  if(!cand.length){
-    const alt = /(区|市|町|村|駅)$/u.test(term) ? term : (term + "");
-    if (alt!==term) return await geocode(alt);
+  const dedupe = rows => {
+    const m=new Map(); rows.forEach(r=>{ const k=r.name.replace(/, 日本$/,""); if(!m.has(k)) m.set(k,r); });
+    return [...m.values()];
+  };
+
+  cand = dedupe(cand).sort((a,b)=>b.score-a.score);
+
+  // 保険：まだ空ならローカルをゆるく
+  if (!cand.length){
+    const loose = localCandidates(term.slice(0, Math.max(1, Math.min(3, term.length-1))));
+    if (loose.length) return loose;
   }
+
   return cand.slice(0,8);
 }
 
@@ -485,7 +558,7 @@ $("#placeInput").addEventListener("input", e=>{
   qTimer = setTimeout(async ()=>{
     const reqId = ++lastReqId;
     const q = normalizeQuery(raw);
-    if (q.length < 2){ if(reqId===lastReqId) box.innerHTML=""; return; }
+    if (q.length < 1){ if(reqId===lastReqId) box.innerHTML=""; return; }
 
     box.innerHTML = `<div class="tiny muted">検索中…</div>`;
     const list = await geocode(q);
@@ -502,7 +575,7 @@ $("#placeInput").addEventListener("input", e=>{
       update(lat,lon,div.textContent);
       $("#picker").style.display="none"; $("#openPicker").classList.remove("activeTab");
     }));
-  }, 300);
+  }, 250);
 });
 
 /* ===== UI wiring ===== */
