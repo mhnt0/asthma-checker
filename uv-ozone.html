@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>オゾンと健康 | 喘息注意度チェッカー</title>
+<meta name="theme-color" content="#0b3d5c" />
+<style>
+  :root{ --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21; --accent:#2a84ff; }
+  @media (prefers-color-scheme: light){ :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; } }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--fg); }
+  header{ padding:16px; position:sticky; top:0; z-index:3; backdrop-filter:saturate(1.2) blur(6px);
+          background:color-mix(in oklab, var(--bg) 84%, transparent);
+          border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
+  h1{ font-size:18px; margin:0; }
+  main{ padding:16px; display:grid; gap:16px; max-width:720px; margin:0 auto; }
+  .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; padding:16px; }
+  .muted{ color:var(--muted); }
+  .lead{ font-size:14px; line-height:1.8; }
+  footer.site-footer{ margin:28px auto 12px; max-width:720px; padding:14px 12px;
+    background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px;}
+  .footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
+  .footer-chip{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; min-height:44px;
+    border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; font-size:14px;}
+  .footer-chip:active{ transform:scale(.98); }
+  .footer-sep{ height:1px; width:100%; margin:8px 0; background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+  .legal{ color:var(--muted); background:transparent; }
+  a{ color:var(--accent); }
+</style>
+</head>
+<body>
+<header><h1>オゾンと健康</h1></header>
+
+<main>
+  <section class="card lead">
+    <p>日射の強い季節、都市部では光化学反応により地表付近のオゾン濃度が上昇し、光化学スモッグが発生することがあります。オゾンは強い酸化作用を持ち、目やのどの刺激、咳、息苦しさなどの症状を引き起こすことがあります。</p>
+    <h3>注意が必要な条件</h3>
+    <ul>
+      <li>夏の晴天・高温・弱風の日</li>
+      <li>昼過ぎ〜夕方にかけて濃度が上がりやすい</li>
+    </ul>
+    <h3>予防策</h3>
+    <ul>
+      <li>濃度が高い時間帯の屋外活動を控える</li>
+      <li>のどの痛み・咳などの症状が出た場合は休養し、無理をしない</li>
+      <li>自治体の注意報や本サイトの指標を参考にする</li>
+    </ul>
+    <p class="muted">※ 本ページは一般的な健康情報の提供を目的としています。症状が長引く場合は医療機関へご相談ください。</p>
+  </section>
+</main>
+
+<footer class="site-footer" aria-label="サイトフッター">
+  <p class="footer-title">解説・ヘルプ</p>
+  <nav class="footer-row" aria-label="解説リンク">
+    <a class="footer-chip" href="asthma-info.html">喘息とは</a>
+    <a class="footer-chip" href="pm25-pollen.html">PM2.5と花粉</a>
+    <a class="footer-chip" aria-current="page" href="uv-ozone.html">オゾンと健康</a>
+    <a class="footer-chip" href="./">トップへ戻る</a>
+  </nav>
+  <hr class="footer-sep" />
+  <p class="footer-title">運営・ポリシー</p>
+  <nav class="footer-row" aria-label="ポリシーリンク">
+    <a class="footer-chip legal" href="privacy.html">プライバシーポリシー</a>
+    <a class="footer-chip legal" href="disclaimer.html">免責事項</a>
+    <a class="footer-chip legal" href="terms.html">利用規約</a>
+  </nav>
+</footer>
+</body>
+</html>
