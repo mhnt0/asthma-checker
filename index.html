@@ -26,6 +26,31 @@
          border-radius:14px; padding:14px; }
   .row{ display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
 
+/* ===== Footer ===== */
+footer.site-footer{
+  margin:28px auto 12px;
+  max-width:720px;
+  padding:14px 12px;
+  background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%);
+  border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
+  border-radius:14px;
+}
+.footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
+.footer-chip{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:10px 14px; min-height:44px;            /* タップ領域 44px以上 */
+  border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%);
+  color:var(--fg); text-decoration:none; font-size:14px;
+}
+.footer-chip:active{ transform:scale(.98); }
+.footer-sep{ height:1px; width:100%; margin:8px 0;
+  background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+
+/* 法務リンクは控えめに（でも押しやすいサイズ維持） */
+.footer-chip.legal{ color:var(--muted); background:transparent; }
+  
   /* Buttons */
   button{ font-size:16px; padding:12px 14px; border-radius:12px;
           border:1px solid color-mix(in oklab,var(--fg) 10%, transparent);
@@ -156,13 +181,23 @@
   </section>
 </main>
 
-<footer style="margin-top:40px; font-size:12px; text-align:center;">
-  <a href="privacy.html">プライバシーポリシー</a> |
-  <a href="terms.html">利用規約</a> |
-  <a href="disclaimer.html">免責事項</a> |
-  <a href="asthma-info.html">喘息とは</a> |
-  <a href="pm25-pollen.html">PM2.5と花粉</a> |
-  <a href="uv-ozone.html">オゾンと健康</a>
+<footer class="site-footer" aria-label="サイトフッター">
+  <p class="footer-title">解説・ヘルプ</p>
+  <nav class="footer-row" aria-label="解説リンク">
+    <a class="footer-chip" href="asthma-info.html">喘息とは</a>
+    <a class="footer-chip" href="pm25-pollen.html">PM2.5と花粉</a>
+    <a class="footer-chip" href="uv-ozone.html">オゾンと健康</a>
+    <a class="footer-chip" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="ページ先頭へ">先頭へ戻る</a>
+  </nav>
+
+  <hr class="footer-sep" />
+
+  <p class="footer-title">運営・ポリシー</p>
+  <nav class="footer-row" aria-label="ポリシーリンク">
+    <a class="footer-chip legal" href="privacy.html">プライバシーポリシー</a>
+    <a class="footer-chip legal" href="disclaimer.html">免責事項</a>
+    <a class="footer-chip legal" href="terms.html">利用規約</a>
+  </nav>
 </footer>
   
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
