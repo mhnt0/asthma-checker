@@ -6,58 +6,61 @@
 <title>免責事項 | 喘息注意度チェッカー</title>
 <meta name="theme-color" content="#0b3d5c" />
 <style>
-  :root{ --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21; --accent:#2a84ff; }
-  @media (prefers-color-scheme: light){ :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; } }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--fg); }
-  header{ padding:16px; position:sticky; top:0; z-index:3; backdrop-filter:saturate(1.2) blur(6px);
-          background:color-mix(in oklab, var(--bg) 84%, transparent);
-          border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
-  h1{ font-size:18px; margin:0; }
-  main{ padding:16px; display:grid; gap:16px; max-width:720px; margin:0 auto; }
-  .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; padding:16px; }
-  .muted{ color:var(--muted); }
-  .lead{ font-size:14px; line-height:1.7; }
-  footer.site-footer{ margin:28px auto 12px; max-width:720px; padding:14px 12px;
-    background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px;}
-  .footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
-  .footer-chip{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; min-height:44px;
-    border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
-    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; font-size:14px;}
-  .footer-chip:active{ transform:scale(.98); }
-  .footer-sep{ height:1px; width:100%; margin:8px 0; background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
-  .legal{ color:var(--muted); background:transparent; }
-  a{ color:var(--accent); }
+:root{ --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21; --accent:#2a84ff; }
+@media (prefers-color-scheme: light){ :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; } }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--fg); }
+header{ padding:16px; position:sticky; top:0; z-index:3; backdrop-filter:saturate(1.2) blur(6px);
+  background:color-mix(in oklab, var(--bg) 84%, transparent); border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
+h1{ font-size:18px; margin:0; }
+main{ padding:16px; display:grid; gap:16px; max-width:780px; margin:0 auto; }
+.card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; padding:16px; }
+a.button{ display:inline-block; padding:12px 14px; border-radius:12px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; }
+a.button:active{ transform:scale(.98); }
+
+footer.site-footer{ margin:28px auto 12px; max-width:780px; padding:14px 12px;
+  background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; }
+.footer-row{ display:flex; flex-wrap:wrap; gap:10px; }
+.footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
+.footer-chip{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; min-height:44px;
+  border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; font-size:14px; }
+.footer-chip.legal{ color:var(--muted); background:transparent; }
+.footer-chip:active{ transform:scale(.98); }
+.footer-sep{ height:1px; width:100%; margin:8px 0; background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+.muted{ color:var(--muted); }
 </style>
 </head>
 <body>
 <header><h1>免責事項</h1></header>
 
 <main>
-  <section class="card lead">
-    <p>本サイトは、気象・大気質・花粉などの公開APIをもとに、喘息リスクの参考情報を提供するものです。医学的診断・治療に代わるものではありません。</p>
-    <ul>
-      <li>表示される数値やアドバイスの完全性・正確性を保証するものではありません。</li>
-      <li>本サイトの利用によって生じた損害等について、管理者は一切の責任を負いません。</li>
-      <li>強い症状がある場合や不安がある場合は、速やかに医療機関へご相談ください。</li>
-    </ul>
+  <section class="card">
+    <p>本サイトは、気象・大気・花粉などのデータに基づいた参考情報を提供しますが、内容の正確性・完全性・有用性を保証するものではありません。表示される「注意度スコア」や助言は一般的な指標であり、個々の症状や状況に必ずしも適合しません。</p>
+    <p>本サイトの情報に基づき利用者が行った判断・行動により生じた損害について、運営者は一切の責任を負いません。健康状態に不安がある場合、または症状が強い場合は、必ず医療機関へご相談ください。</p>
+    <p>本サイトの内容は予告なく変更・中止する場合があります。また、外部サイトへのリンクを含む場合がありますが、その内容および安全性について運営者は責任を負いません。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <a class="button" href="./index.html">トップへ戻る</a>
+      <a class="button" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})">先頭へ</a>
+    </div>
   </section>
 </main>
 
 <footer class="site-footer" aria-label="サイトフッター">
   <p class="footer-title">解説・ヘルプ</p>
-  <nav class="footer-row" aria-label="解説リンク">
+  <nav class="footer-row">
     <a class="footer-chip" href="asthma-info.html">喘息とは</a>
     <a class="footer-chip" href="pm25-pollen.html">PM2.5と花粉</a>
     <a class="footer-chip" href="uv-ozone.html">オゾンと健康</a>
-    <a class="footer-chip" href="./">トップへ戻る</a>
+    <a class="footer-chip" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})">先頭へ戻る</a>
+    <a class="footer-chip" href="index.html">トップページ</a>
   </nav>
   <hr class="footer-sep" />
   <p class="footer-title">運営・ポリシー</p>
-  <nav class="footer-row" aria-label="ポリシーリンク">
+  <nav class="footer-row">
     <a class="footer-chip legal" href="privacy.html">プライバシーポリシー</a>
-    <a class="footer-chip legal" href="disclaimer.html" aria-current="page">免責事項</a>
+    <a class="footer-chip legal" href="disclaimer.html">免責事項</a>
     <a class="footer-chip legal" href="terms.html">利用規約</a>
   </nav>
 </footer>
