@@ -6,64 +6,60 @@
 <title>PM2.5と花粉 | 喘息注意度チェッカー</title>
 <meta name="theme-color" content="#0b3d5c" />
 <style>
-  :root{ --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21; --accent:#2a84ff; }
-  @media (prefers-color-scheme: light){ :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; } }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--fg); }
-  header{ padding:16px; position:sticky; top:0; z-index:3; backdrop-filter:saturate(1.2) blur(6px);
-          background:color-mix(in oklab, var(--bg) 84%, transparent);
-          border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
-  h1{ font-size:18px; margin:0; }
-  main{ padding:16px; display:grid; gap:16px; max-width:720px; margin:0 auto; }
-  .card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; padding:16px; }
-  .muted{ color:var(--muted); }
-  .lead{ font-size:14px; line-height:1.8; }
-  footer.site-footer{ margin:28px auto 12px; max-width:720px; padding:14px 12px;
-    background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px;}
-  .footer-row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
-  .footer-chip{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; min-height:44px;
-    border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
-    background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; font-size:14px;}
-  .footer-chip:active{ transform:scale(.98); }
-  .footer-sep{ height:1px; width:100%; margin:8px 0; background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
-  .legal{ color:var(--muted); background:transparent; }
-  a{ color:var(--accent); }
+:root{ --bg:#0b1116; --fg:#e9f1f5; --muted:#9bb3bf; --card:#121a21; --accent:#2a84ff; }
+@media (prefers-color-scheme: light){ :root{ --bg:#f5fbff; --fg:#0c1b24; --muted:#5b7480; --card:#ffffff; } }
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background:var(--bg); color:var(--fg); }
+header{ padding:16px; position:sticky; top:0; z-index:3; backdrop-filter:saturate(1.2) blur(6px);
+  background:color-mix(in oklab, var(--bg) 84%, transparent); border-bottom:1px solid color-mix(in oklab,var(--fg) 12%, transparent);}
+h1{ font-size:18px; margin:0; }
+main{ padding:16px; display:grid; gap:16px; max-width:780px; margin:0 auto; }
+.card{ background:var(--card); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; padding:16px; }
+a.button{ display:inline-block; padding:12px 14px; border-radius:12px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; }
+a.button:active{ transform:scale(.98); }
+
+footer.site-footer{ margin:28px auto 12px; max-width:780px; padding:14px 12px;
+  background:color-mix(in oklab, var(--card) 70%, var(--bg) 30%); border:1px solid color-mix(in oklab,var(--fg) 10%, transparent); border-radius:14px; }
+.footer-row{ display:flex; flex-wrap:wrap; gap:10px; }
+.footer-title{ font-size:12px; color:var(--muted); margin:0 0 8px 2px; }
+.footer-chip{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; min-height:44px;
+  border-radius:999px; border:1px solid color-mix(in oklab,var(--fg) 12%, transparent);
+  background:color-mix(in oklab,var(--bg) 70%, var(--card) 30%); color:var(--fg); text-decoration:none; font-size:14px; }
+.footer-chip.legal{ color:var(--muted); background:transparent; }
+.footer-chip:active{ transform:scale(.98); }
+.footer-sep{ height:1px; width:100%; margin:8px 0; background:color-mix(in oklab,var(--fg) 10%, transparent); border:0; }
+.muted{ color:var(--muted); }
 </style>
 </head>
 <body>
 <header><h1>PM2.5と花粉</h1></header>
 
 <main>
-  <section class="card lead">
-    <p>PM2.5は 2.5μm 以下の微小粒子状物質で、肺の奥まで到達しやすく、喘息など呼吸器疾患を悪化させる可能性があります。花粉（スギ/ヒノキ/ブタクサ等）はアレルギー反応を引き起こし、鼻炎だけでなく気道炎症にも影響します。</p>
-    <h3>影響とリスク</h3>
-    <ul>
-      <li>気道の炎症増悪、発作の誘発</li>
-      <li>長期暴露による呼吸機能低下のリスク</li>
-      <li>花粉症と喘息の併発（アレルギーの「一連の気道」）</li>
-    </ul>
-    <h3>対策</h3>
-    <ul>
-      <li>濃度が高い日は外出時間を短くし、帰宅時は衣服を払う</li>
-      <li>室内の換気と空気清浄機の併用、フィルター管理</li>
-      <li>マスク・眼鏡の着用、洗濯物の部屋干し</li>
-    </ul>
-    <p class="muted">※ 本サイトの数値は参考指標です。体調不良時は無理をせず医療機関へ。</p>
+  <section class="card">
+    <p>PM2.5 は直径 2.5µm 以下の微小粒子状物質で、肺の奥まで到達しやすいのが特徴です。工場・車の排ガス・燃焼などが主な発生源で、濃度が高い日は空気がかすんで見えることもあります。喘息を持つ方は、PM2.5 が高い日に咳や息苦しさが増えることが知られています。</p>
+    <p>花粉は季節性が強く、春のスギ・ヒノキ、初夏のイネ科、秋のブタクサなど種類によって飛散時期が異なります。花粉はアレルギー反応を介して気道の炎症を悪化させ、喘息症状を誘発しやすくします。PM2.5 と花粉が同時に高い日は、特に注意が必要です。</p>
+    <p>対策としては、屋外活動の時間や強度を調整し、マスクや眼鏡で物理的に曝露を減らすこと、帰宅時に衣服や髪についた花粉を払い落とすことが有効です。室内では空気清浄機の利用、こまめな掃除、窓の開閉を最小限にすることが推奨されます。</p>
+    <p>本サイトでは PM2.5 濃度と花粉予測を同時に確認でき、さらに湿度・気温・風速などの気象条件も合わせた「注意度スコア」を算出して表示します。日々の行動計画の参考としてご活用ください。</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <a class="button" href="./index.html">トップへ戻る</a>
+      <a class="button" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})">先頭へ</a>
+    </div>
   </section>
 </main>
 
 <footer class="site-footer" aria-label="サイトフッター">
   <p class="footer-title">解説・ヘルプ</p>
-  <nav class="footer-row" aria-label="解説リンク">
+  <nav class="footer-row">
     <a class="footer-chip" href="asthma-info.html">喘息とは</a>
-    <a class="footer-chip" aria-current="page" href="pm25-pollen.html">PM2.5と花粉</a>
+    <a class="footer-chip" href="pm25-pollen.html">PM2.5と花粉</a>
     <a class="footer-chip" href="uv-ozone.html">オゾンと健康</a>
-    <a class="footer-chip" href="./">トップへ戻る</a>
+    <a class="footer-chip" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'})">先頭へ戻る</a>
+    <a class="footer-chip" href="index.html">トップページ</a>
   </nav>
   <hr class="footer-sep" />
   <p class="footer-title">運営・ポリシー</p>
-  <nav class="footer-row" aria-label="ポリシーリンク">
+  <nav class="footer-row">
     <a class="footer-chip legal" href="privacy.html">プライバシーポリシー</a>
     <a class="footer-chip legal" href="disclaimer.html">免責事項</a>
     <a class="footer-chip legal" href="terms.html">利用規約</a>
